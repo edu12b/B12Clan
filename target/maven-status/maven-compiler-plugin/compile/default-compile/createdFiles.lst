@@ -1,0 +1,7 @@
+com\br\b12clans\database\DatabaseManager.class
+com\br\b12clans\models\Clan.class
+com\br\b12clans\commands\ClanCommand.class
+com\br\b12clans\B12Clans.class
+com\br\b12clans\listeners\PlayerListener.class
+com\br\b12clans\placeholders\ClanPlaceholder.class
+com\br\b12clans\managers\ClanManager.class

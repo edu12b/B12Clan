@@ -1,0 +1,45 @@
+# Configuração do banco de dados MySQL
+database:
+  host: "localhost"
+  port: 3306
+  database: "minecraft"
+  username: "root"
+  password: ""
+  
+  # Configurações do pool de conexões HikariCP
+  pool:
+    maximum-pool-size: 10
+    minimum-idle: 2
+    connection-timeout: 30000
+    idle-timeout: 600000
+    max-lifetime: 1800000
+
+# Configurações gerais do plugin
+settings:
+  # Prefixo das mensagens do plugin
+  prefix: "&6[B12Clans]&r "
+  
+  # Configurações de clãs
+  clan:
+    max-name-length: 16
+    min-name-length: 3
+    max-tag-length: 6
+    min-tag-length: 2
+    
+    # Permitir cores hexadecimais nas tags
+    allow-hex-colors: true
+    
+    # Permitir cores normais nas tags (&a, &b, etc)
+    allow-color-codes: true
+
+# Mensagens do plugin
+messages:
+  no-permission: "&cVocê não tem permissão para usar este comando!"
+  player-only: "&cApenas jogadores podem usar este comando!"
+  clan-created: "&a&lCLÃ CRIADO!"
+  clan-creation-failed: "&cErro ao criar o clã! Tente novamente."
+  already-in-clan: "&cVocê já faz parte de um clã!"
+  clan-exists: "&cJá existe um clã com esse nome ou tag!"
+  invalid-name: "&cNome inválido! Use apenas letras, números e _ (3-16 caracteres)"
+  invalid-tag: "&cTag inválida! Use apenas letras e números (2-6 caracteres sem cores)"
+  no-clan: "&cVocê não faz parte de nenhum clã!"

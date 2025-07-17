@@ -1,0 +1,27 @@
+name: B12Clans
+version: 1.0.0
+main: com.br.b12clans.B12Clans
+api-version: 1.21
+author: Eduardo12B
+description: Sistema de clãs profissional para servidores Minecraft
+website: https://github.com/Eduardo12B/B12Clans
+
+depend: [PlaceholderAPI]
+
+commands:
+  clan:
+    description: Comando principal do sistema de clãs
+    usage: /clan <subcomando>
+    permission: b12clans.use
+    permission-message: §cVocê não tem permissão para usar este comando!
+
+permissions:
+  b12clans.use:
+    description: Permissão básica para usar comandos de clã
+    default: true
+  b12clans.criar:
+    description: Permissão para criar clãs
+    default: true
+  b12clans.admin:
+    description: Permissões administrativas do plugin
+    default: op
