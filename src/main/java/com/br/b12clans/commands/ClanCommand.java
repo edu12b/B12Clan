@@ -6,6 +6,7 @@ import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.Bukkit;
+import org.bukkit.OfflinePlayer;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -14,7 +15,9 @@ import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 public class ClanCommand implements CommandExecutor, TabCompleter {
@@ -61,6 +64,15 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
                 break;
             case "negar":
                 handleDenyCommand(player, args);
+                break;
+            case "sair":
+                handleLeaveCommand(player, args);
+                break;
+            case "expulsar":
+                handleKickCommand(player, args);
+                break;
+            case "deletar":
+                handleDeleteCommand(player, args);
                 break;
             default:
                 sendHelp(player);
@@ -264,6 +276,111 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         }, runnable -> plugin.getServer().getScheduler().runTask(plugin, runnable));
     }
 
+    private void handleLeaveCommand(Player player, String[] args) {
+        Clan clan = clanManager.getPlayerClan(player.getUniqueId());
+        if (clan == null) {
+            messages.sendMessage(player, "no-clan");
+            return;
+        }
+        if (clan.getOwnerUuid().equals(player.getUniqueId())) {
+            messages.sendMessage(player, "cannot-leave-as-owner");
+            return;
+        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            boolean success = plugin.getDatabaseManager().removeClanMember(clan.getId(), player.getUniqueId());
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (success) {
+                    clanManager.unloadPlayerClan(player.getUniqueId());
+                    messages.sendMessage(player, "leave-success", "%clan_name%", clan.getName());
+                } else {
+                    messages.sendMessage(player, "generic-error");
+                }
+            });
+        });
+    }
+
+    private void handleKickCommand(Player player, String[] args) {
+        if (!player.hasPermission("b12clans.expulsar")) {
+            messages.sendMessage(player, "kick-no-permission");
+            return;
+        }
+        Clan kickerClan = clanManager.getPlayerClan(player.getUniqueId());
+        if (kickerClan == null) {
+            messages.sendMessage(player, "no-clan");
+            return;
+        }
+        if (args.length < 2) {
+            messages.sendMessage(player, "kick-usage");
+            return;
+        }
+        OfflinePlayer target = Bukkit.getOfflinePlayer(args[1]);
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+            messages.sendMessage(player, "player-not-found", "%player_name%", args[1]);
+            return;
+        }
+        UUID targetUuid = target.getUniqueId();
+        if (targetUuid.equals(player.getUniqueId())) {
+            messages.sendMessage(player, "cannot-kick-self");
+            return;
+        }
+        if (kickerClan.getOwnerUuid().equals(targetUuid)) {
+            messages.sendMessage(player, "cannot-kick-owner");
+            return;
+        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            Clan targetClan = plugin.getDatabaseManager().getClanByPlayer(targetUuid);
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (targetClan == null || targetClan.getId() != kickerClan.getId()) {
+                    messages.sendMessage(player, "player-not-in-your-clan", "%player_name%", target.getName());
+                    return;
+                }
+                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+                    boolean success = plugin.getDatabaseManager().removeClanMember(kickerClan.getId(), targetUuid);
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        if (success) {
+                            clanManager.unloadPlayerClan(targetUuid);
+                            messages.sendMessage(player, "kick-success", "%player_name%", target.getName());
+                            if (target.isOnline()) {
+                                messages.sendMessage(target.getPlayer(), "you-were-kicked", "%clan_name%", kickerClan.getName());
+                            }
+                        } else {
+                            messages.sendMessage(player, "generic-error");
+                        }
+                    });
+                });
+            });
+        });
+    }
+
+    private void handleDeleteCommand(Player player, String[] args) {
+        Clan clan = clanManager.getPlayerClan(player.getUniqueId());
+        if (clan == null) {
+            messages.sendMessage(player, "no-clan");
+            return;
+        }
+        if (!clan.getOwnerUuid().equals(player.getUniqueId())) {
+            messages.sendMessage(player, "not-owner");
+            return;
+        }
+        if (args.length < 2 || !args[1].equalsIgnoreCase("confirm")) {
+            messages.sendMessage(player, "delete-confirm");
+            return;
+        }
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            // TODO: Precisamos de uma forma de obter todos os membros do clã antes de deletar
+            // para poder limpar o cache deles.
+            boolean success = plugin.getDatabaseManager().deleteClan(clan.getId());
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (success) {
+                    clanManager.unloadPlayerClan(player.getUniqueId());
+                    messages.sendMessage(player, "delete-success", "%clan_name%", clan.getName());
+                } else {
+                    messages.sendMessage(player, "generic-error");
+                }
+            });
+        });
+    }
+
     private void sendHelp(Player player) {
         messages.sendMessage(player, "help-header");
         messages.sendMessage(player, "help-line-create");
@@ -272,15 +389,21 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         messages.sendMessage(player, "help-line-invite");
         messages.sendMessage(player, "help-line-accept");
         messages.sendMessage(player, "help-line-deny");
+        messages.sendMessage(player, "help-line-sair");
+        messages.sendMessage(player, "help-line-expulsar");
+        messages.sendMessage(player, "help-line-deletar");
         messages.sendMessage(player, "help-footer");
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
+        if (!(sender instanceof Player)) return Collections.emptyList();
+
+        Player player = (Player) sender;
         List<String> completions = new ArrayList<>();
-        List<String> subCommands = Arrays.asList("criar", "info", "ver", "convidar", "aceitar", "negar");
 
         if (args.length == 1) {
+            List<String> subCommands = Arrays.asList("criar", "info", "ver", "convidar", "aceitar", "negar", "sair", "expulsar", "deletar");
             for (String sub : subCommands) {
                 if (sub.startsWith(args[0].toLowerCase())) {
                     completions.add(sub);
@@ -289,14 +412,36 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
             return completions;
         }
 
-        if (args.length == 2 && args[0].equalsIgnoreCase("convidar")) {
-            String partialName = args[1].toLowerCase();
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(Player::getName)
-                    .filter(name -> name.toLowerCase().startsWith(partialName))
-                    .collect(Collectors.toList());
-        }
+        if (args.length == 2) {
+            if (args[0].equalsIgnoreCase("convidar") || args[0].equalsIgnoreCase("expulsar")) {
+                String partialName = args[1].toLowerCase();
+                return Bukkit.getOnlinePlayers().stream()
+                        .map(Player::getName)
+                        .filter(name -> name.toLowerCase().startsWith(partialName))
+                        .collect(Collectors.toList());
+            }
 
-        return completions;
+            if (args[0].equalsIgnoreCase("aceitar") || args[0].equalsIgnoreCase("negar")) {
+                Integer invitedClanId = clanManager.getPendingInvite(player.getUniqueId());
+                if (invitedClanId != null) {
+                    Clan clan = plugin.getDatabaseManager().getClanById(invitedClanId);
+                    if (clan != null) {
+                        String cleanTag = clanManager.getCleanTag(clan.getTag());
+                        if (cleanTag.toLowerCase().startsWith(args[1].toLowerCase())) {
+                            completions.add(cleanTag);
+                        }
+                    }
+                }
+                return completions;
+            }
+
+            if (args[0].equalsIgnoreCase("deletar")) {
+                if ("confirm".startsWith(args[1].toLowerCase())) {
+                    completions.add("confirm");
+                }
+                return completions;
+            }
+        }
+        return Collections.emptyList();
     }
 }

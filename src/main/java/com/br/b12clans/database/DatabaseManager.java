@@ -189,4 +189,33 @@ public class DatabaseManager {
         }
         return null;
     }
+    public boolean removeClanMember(int clanId, UUID playerUuid) {
+        String sql = "DELETE FROM b12_clan_members WHERE clan_id = ? AND player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            ps.setString(2, playerUuid.toString());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao remover membro " + playerUuid + " do clã ID " + clanId, e);
+            return false;
+        }
+    }
+
+    public boolean deleteClan(int clanId) {
+        String sql = "DELETE FROM b12_clans WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, clanId);
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao deletar o clã ID " + clanId, e);
+            return false;
+        }
+    }
 }

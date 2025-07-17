@@ -77,3 +77,20 @@ messages:
   help-line-accept: "&e/clan aceitar <tag> &7- Aceitar um convite de clã."
   help-line-deny: "&e/clan negar <tag> &7- Negar um convite de clã."
   help-footer: "&6&l======================="
+
+
+  # Comandos /clan sair e /clan expulsar
+  leave-success: "&eVocê saiu do clã &6%clan_name%&e."
+  cannot-leave-as-owner: "&cVocê é o dono do clã! Você não pode sair. Use /clan deletar para apagar o clã." # (Comando futuro)
+  kick-usage: "&cUso: /clan expulsar <jogador>"
+  kick-no-permission: "&cVocê não tem permissão para expulsar membros."
+  cannot-kick-self: "&cVocê não pode se expulsar."
+  cannot-kick-owner: "&cVocê não pode expulsar o dono do clã!"
+  player-not-in-your-clan: "&cO jogador %player_name% não faz parte do seu clã."
+  kick-success: "&aVocê expulsou %player_name% do clã."
+  you-were-kicked: "&cVocê foi expulso do clã &6%clan_name%&c."
+
+  # --- Comando /clan deletar ---
+  delete-confirm: "&cAVISO: Esta ação é irreversível! Para confirmar, use /clan deletar confirm."
+  not-owner: "&cVocê não é o dono do clã para poder deletá-lo."
+  delete-success: "&aO clã %clan_name% foi deletado com sucesso."
