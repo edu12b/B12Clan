@@ -1,45 +1,56 @@
-# Configuração do banco de dados MySQL
+# ========================================
+#           B12CLANS CONFIGURAÇÃO
+# ========================================
+
+# Configuração do banco de dados MariaDB
+# OBRIGATÓRIO: MariaDB 10.2+ deve estar instalado e configurado
 database:
+  # Configurações do servidor MariaDB
   host: "localhost"
   port: 3306
   database: "minecraft"
   username: "root"
   password: ""
-  
+
   # Configurações do pool de conexões HikariCP
   pool:
     maximum-pool-size: 10
     minimum-idle: 2
-    connection-timeout: 30000
-    idle-timeout: 600000
-    max-lifetime: 1800000
+    connection-timeout: 10000    # 10 segundos
+    idle-timeout: 300000         # 5 minutos
+    max-lifetime: 900000         # 15 minutos
 
 # Configurações gerais do plugin
 settings:
   # Prefixo das mensagens do plugin
   prefix: "&6[B12Clans]&r "
-  
-  # Configurações de clãs
+
+  # Configurações de clãs (limites flexíveis)
   clan:
-    max-name-length: 16
-    min-name-length: 3
-    max-tag-length: 6
-    min-tag-length: 2
-    
-    # Permitir cores hexadecimais nas tags
+    max-name-length: 32          # Nome do clã (sem cores)
+    min-name-length: 2
+    max-tag-clean-length: 16     # Conteúdo da tag sem cores
+    min-tag-clean-length: 1
+    max-expanded-tag-length: 1000 # Tamanho máximo com cores expandidas
+
+    # Permitir cores hexadecimais nas tags (&#RRGGBB)
     allow-hex-colors: true
-    
+
     # Permitir cores normais nas tags (&a, &b, etc)
     allow-color-codes: true
 
-# Mensagens do plugin
+# Mensagens do plugin (suporte a cores)
 messages:
   no-permission: "&cVocê não tem permissão para usar este comando!"
   player-only: "&cApenas jogadores podem usar este comando!"
-  clan-created: "&a&lCLÃ CRIADO!"
+  clan-created: "&a&lCLÃ CRIADO COM SUCESSO!"
   clan-creation-failed: "&cErro ao criar o clã! Tente novamente."
   already-in-clan: "&cVocê já faz parte de um clã!"
   clan-exists: "&cJá existe um clã com esse nome ou tag!"
-  invalid-name: "&cNome inválido! Use apenas letras, números e _ (3-16 caracteres)"
-  invalid-tag: "&cTag inválida! Use apenas letras e números (2-6 caracteres sem cores)"
+  invalid-name: "&cNome inválido! Use apenas letras, números e _ (2-32 caracteres)"
+  invalid-tag: "&cTag inválida! Use apenas letras, números e símbolos básicos (1-16 caracteres sem cores)"
+  tag-too-long: "&cTag muito longa! Máximo: 1000 caracteres expandidos"
   no-clan: "&cVocê não faz parte de nenhum clã!"
+  checking-availability: "&eVerificando disponibilidade..."
+
+

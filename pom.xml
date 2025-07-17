@@ -11,7 +11,7 @@
 
     <name>B12Clans</name>
     <description>Sistema de clãs</description>
-    <url>https://github.com/Eduardo12B/B12Clans</url>
+    <url>https://github.com/TheEternalDark/B12Clan</url>
 
     <properties>
         <maven.compiler.source>17</maven.compiler.source>
@@ -25,7 +25,7 @@
             <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
-        
+
         <!-- PlaceholderAPI Repository -->
         <repository>
             <id>placeholderapi</id>
@@ -57,11 +57,11 @@
             <version>5.0.1</version>
         </dependency>
 
-        <!-- MySQL Connector -->
+        <!-- MariaDB Connector -->
         <dependency>
-            <groupId>mysql</groupId>
-            <artifactId>mysql-connector-java</artifactId>
-            <version>8.0.33</version>
+            <groupId>org.mariadb.jdbc</groupId>
+            <artifactId>mariadb-java-client</artifactId>
+            <version>3.3.2</version>
         </dependency>
     </dependencies>
 
@@ -99,6 +99,10 @@
                                 <relocation>
                                     <pattern>com.zaxxer.hikari</pattern>
                                     <shadedPattern>com.br.b12clans.libs.hikari</shadedPattern>
+                                </relocation>
+                                <relocation>
+                                    <pattern>org.mariadb</pattern>
+                                    <shadedPattern>com.br.b12clans.libs.mariadb</shadedPattern>
                                 </relocation>
                             </relocations>
                             <filters>

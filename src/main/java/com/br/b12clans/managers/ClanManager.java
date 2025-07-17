@@ -14,10 +14,10 @@ public class ClanManager {
     private final B12Clans plugin;
     private final Map<UUID, Clan> playerClans;
     
-    // Padrões de validação
+    // Padrões de validação mais flexíveis
     private static final Pattern HEX_PATTERN = Pattern.compile("&#[a-fA-F0-9]{6}");
-    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{3,16}$");
-    private static final Pattern TAG_PATTERN = Pattern.compile("^[a-zA-Z0-9]{2,6}$");
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
+    private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\$\\$\\-_]{1,16}$");
     
     public ClanManager(B12Clans plugin) {
         this.plugin = plugin;
@@ -29,11 +29,19 @@ public class ClanManager {
     }
     
     public boolean isValidClanTag(String tag) {
-        if (tag == null) return false;
+        if (tag == null || tag.trim().isEmpty()) return false;
         
         // Remove cores para validar apenas o conteúdo
         String cleanTag = ChatColor.stripColor(translateHexColors(tag));
-        return TAG_PATTERN.matcher(cleanTag).matches();
+        
+        // Verificar se o conteúdo limpo está dentro dos limites mais flexíveis
+        if (!TAG_CLEAN_PATTERN.matcher(cleanTag).matches()) {
+            return false;
+        }
+        
+        // Verificar se a tag expandida não é excessivamente longa (limite de 1000 caracteres)
+        String expandedTag = translateColors(tag);
+        return expandedTag.length() <= 1000;
     }
     
     public String translateHexColors(String message) {
@@ -91,5 +99,21 @@ public class ClanManager {
     public String getPlayerClanName(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
         return clan != null ? clan.getName() : "";
+    }
+
+    public boolean isTagTooLong(String tag) {
+        if (tag == null) return false;
+        String expandedTag = translateColors(tag);
+        return expandedTag.length() > 1000;
+    }
+
+    public int getExpandedTagLength(String tag) {
+        if (tag == null) return 0;
+        return translateColors(tag).length();
+    }
+
+    public String getCleanTag(String tag) {
+        if (tag == null) return "";
+        return ChatColor.stripColor(translateHexColors(tag));
     }
 }

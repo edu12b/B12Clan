@@ -4,7 +4,7 @@ main: com.br.b12clans.B12Clans
 api-version: 1.21
 author: Eduardo12B
 description: Sistema de clãs
-website: https://github.com/Eduardo12B/B12Clans
+website: https://github.com/TheEternalDark/B12Clan
 
 depend: [PlaceholderAPI]
 
