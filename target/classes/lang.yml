@@ -1,58 +1,79 @@
 # ========================================
-#           B12CLANS - IDIOMAS
+#           B12CLANS - LANG.YML
 # ========================================
-# Use '&' para códigos de cor e placeholders como %placeholder%
-# serão substituídos automaticamente pelo plugin.
+# Use & para códigos de cor.
+# Use %placeholder% para variáveis.
+# ========================================
 
-# Prefixo usado na frente da maioria das mensagens. Deixe em branco se não quiser prefixo.
-prefix: "&8[&6B12Clans&8] &r"
+prefix: "&8[&6B12Clans&8]&r "
 
-# Mensagens gerais
-no-permission: "&cVocê não tem permissão para usar este comando!"
-player-only: "&cEste comando só pode ser executado por um jogador."
-checking-availability: "&eVerificando disponibilidade..."
-no-clan: "&cVocê não faz parte de nenhum clã!"
+messages:
+  # --- Mensagens Gerais ---
+  no-permission: "&cVocê não tem permissão para usar este comando!"
+  player-only: "&cApenas jogadores podem usar este comando!"
+  generic-error: "&cOcorreu um erro inesperado. Por favor, tente novamente."
 
-# Comando /clan criar
-create-usage: "&cUso correto: /clan criar <nome> <tag>"
-create-example: "&7Exemplo: /clan criar MeuClan &#FF0000[MC]"
-create-tag-test-tip: "&7Use /clan ver <tag> para testar sua tag primeiro!"
-invalid-name: "&cNome inválido! Use apenas letras, números e _ (2-32 caracteres)."
-invalid-tag-rules: "&cTag inválida! Conteúdo limpo deve ter de 1 a 16 caracteres."
-invalid-tag-symbols: "&7Símbolos permitidos no conteúdo limpo: a-z, A-Z, 0-9, [], (), -, _"
-tag-too-long: "&cTag muito longa! O tamanho total com cores não pode exceder 1000 caracteres."
-tag-preview: "&7Preview da tag: %tag%"
-tag-clean-content: "&7Conteúdo limpo: §f%clean_tag% §7(Tamanho renderizado: %length% caracteres)"
-already-in-clan: "&cVocê já faz parte de um clã: %clan_name%"
-clan-exists: "&cJá existe um clã com esse nome ou tag!"
-clan-created-success: "&a&lCLÃ CRIADO COM SUCESSO!"
-clan-created-name: "&7Nome: §f%name%"
-clan-created-tag: "&7Tag: %tag%"
-clan-created-leader: "&7Líder: §f%leader%"
-clan-creation-failed: "&cOcorreu um erro inesperado ao criar o clã!"
+  # --- Comando /clan criar ---
+  create-usage: "&cUso: /clan criar <nome> <tag>"
+  create-example: "&7Exemplo: /clan criar MeuClan &e[MC]"
+  create-tag-test-tip: "&7Dica: Use /clan ver <tag> para testar sua tag primeiro!"
+  clan-created-success: "&a&lCLÃ CRIADO COM SUCESSO!" # Sem prefixo
+  clan-created-name: "&7Nome: &f%name%"
+  clan-created-tag: "&7Tag: %tag%"
+  clan-created-leader: "&7Líder: &f%leader%"
+  clan-creation-failed: "&cErro ao criar o clã! Verifique o console."
+  already-in-clan: "&cVocê já faz parte do clã: &f%clan_name%"
+  clan-exists: "&cJá existe um clã com esse nome ou tag!"
+  invalid-name: "&cNome inválido! Use apenas letras, números e _ (2-32 caracteres)."
+  invalid-tag-rules: "&cTag inválida! Use apenas letras, números e símbolos básicos (1-16 caracteres sem cores)."
+  invalid-tag-symbols: "&7Símbolos permitidos: [ ] ( ) - _"
+  tag-too-long: "&cTag muito longa! Máximo: 1000 caracteres com cores."
+  checking-availability: "&eVerificando disponibilidade..."
 
-# Comando /clan info
-info-header: "&6&l=== INFORMAÇÕES DO CLÃ ==="
-info-name: "&7Nome: §f%name%"
-info-tag: "&7Tag: %tag%"
-info-clean-tag: "&7Tag limpa: §f%clean_tag%"
-info-expanded-size: "&7Tamanho renderizado: §f%length% caracteres"
-info-created-at: "&7Criado em: §f%date%"
-info-footer: "&6&l========================"
+  # --- Comando /clan info ---
+  no-clan: "&cVocê não faz parte de nenhum clã."
+  info-header: "&6&l=== INFORMAÇÕES DO CLÃ ==="
+  info-name: "&eNome: &f%name%"
+  info-tag: "&eTag: %tag%"
+  info-clean-tag: "&eTag Limpa: &f%clean_tag%"
+  info-expanded-size: "&eTamanho (com cores): &f%length% caracteres"
+  info-created-at: "&eCriado em: &f%date%"
+  info-footer: "&6&l=========================="
 
-# Comando /clan ver
-ver-header: "&6&l=== VISUALIZAR TAG ==="
-ver-original-tag: "&7Tag original: §f%tag%"
-ver-rendered-tag: "&7Tag renderizada: %tag_rendered%"
-ver-valid: "&a✓ Tag válida!"
-ver-invalid: "&c✗ Tag inválida!"
-ver-invalid-reason-long: "&c  Motivo: Muito longa (máximo: 1000 caracteres renderizados)"
-ver-invalid-reason-content: "&c  Motivo: Conteúdo limpo inválido (1-16 caracteres)"
-ver-footer: "&6&l=================="
+  # --- Comando /clan ver ---
+  ver-usage: "&cUso: /clan ver <tag>"
+  ver-header: "&6&l=== VISUALIZAR TAG ==="
+  ver-original-tag: "&eTag Original: &f%tag%"
+  ver-rendered-tag: "&eTag Renderizada: %tag_rendered%"
+  ver-valid: "&a✓ Tag válida!"
+  ver-invalid: "&c✗ Tag inválida!"
+  ver-invalid-reason-long: "&c  Motivo: Muito longa (máximo: 1000 caracteres)."
+  ver-invalid-reason-content: "&c  Motivo: Conteúdo inválido (1-16 caracteres limpos)."
+  ver-footer: "&6&l====================="
 
-# Comando /clan ajuda
-help-header: "&6&l=== B12CLANS - AJUDA ==="
-help-line-create: "&e/clan criar <nome> <tag> §7- Criar um novo clã"
-help-line-info: "&e/clan info §7- Ver informações do seu clã"
-help-line-ver: "&e/clan ver <tag> §7- Visualizar como uma tag ficará"
-help-footer: "&6&l======================="
+  # --- Comandos de Gestão de Membros ---
+  invite-usage: "&cUso: /clan convidar <jogador>"
+  invite-no-permission: "&cVocê não tem permissão para convidar membros."
+  player-not-found: "&cJogador '%player_name%' não encontrado ou não está online."
+  cannot-invite-self: "&cVocê não pode convidar a si mesmo!"
+  target-already-in-clan: "&cO jogador %player_name% já faz parte de um clã."
+  invite-sent: "&aVocê convidou %player_name% para se juntar ao seu clã."
+  invite-received: "&eVocê foi convidado para se juntar ao clã &6%clan_name%&e! Use &a/clan aceitar %clan_tag% &epara entrar."
+
+  accept-usage: "&cUso: /clan aceitar <tag_do_cla>"
+  deny-usage: "&cUso: /clan negar <tag_do_cla>"
+  no-pending-invite: "&cVocê não tem um convite pendente deste clã."
+  invite-accepted: "&aVocê entrou para o clã &6%clan_name%&a!"
+  invite-denied: "&aVocê recusou o convite do clã &6%clan_name%&a."
+  clan-full: "&cO clã %clan_name% está cheio e não pode aceitar novos membros."
+  player-joined-clan-broadcast: "&eO jogador &6%player_name% &eentrou para o clã!"
+
+  # --- Menu de Ajuda /clan ---
+  help-header: "&6&l=== B12CLANS - AJUDA ==="
+  help-line-create: "&e/clan criar <nome> <tag> &7- Criar um novo clã."
+  help-line-info: "&e/clan info &7- Ver informações do seu clã."
+  help-line-ver: "&e/clan ver <tag> &7- Visualizar como uma tag ficará."
+  help-line-invite: "&e/clan convidar <jogador> &7- Convidar um jogador."
+  help-line-accept: "&e/clan aceitar <tag> &7- Aceitar um convite de clã."
+  help-line-deny: "&e/clan negar <tag> &7- Negar um convite de clã."
+  help-footer: "&6&l======================="

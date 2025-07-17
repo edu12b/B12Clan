@@ -14,27 +14,20 @@ public class Main extends JavaPlugin {
     private ClanManager clanManager;
     private MessagesManager messagesManager;
 
-
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
-        // --- ORDEM DE INICIALIZAÇÃO CORRIGIDA ---
-
-        // 1. Inicializa o DatabaseManager PRIMEIRO e ACIMA DE TUDO.
         this.databaseManager = new DatabaseManager(this);
         if (!databaseManager.initialize()) {
-            // Se a base de dados falhar, o plugin para aqui e desativa-se.
             getLogger().severe("Falha crítica ao inicializar o banco de dados! O B12Clans será desabilitado.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
 
-        // 2. Agora que o banco de dados está 100% pronto, inicializamos o resto.
         this.messagesManager = new MessagesManager(this);
         this.clanManager = new ClanManager(this);
 
-        // 3. Com todos os gerenciadores prontos, registramos os comandos e eventos.
         registerCommands();
         registerEvents();
         registerPlaceholders();
@@ -51,7 +44,9 @@ public class Main extends JavaPlugin {
     }
 
     private void registerCommands() {
-        getCommand("clan").setExecutor(new ClanCommand(this, clanManager, messagesManager));
+        ClanCommand clanCommandExecutor = new ClanCommand(this, clanManager, messagesManager);
+        getCommand("clan").setExecutor(clanCommandExecutor);
+        getCommand("clan").setTabCompleter(clanCommandExecutor);
     }
 
     private void registerPlaceholders() {

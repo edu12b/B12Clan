@@ -20,27 +20,18 @@ public class DatabaseManager {
     }
 
     public boolean initialize() {
-        plugin.getLogger().info("[Debug DB] Step 1: Iniciando o método initialize().");
         try {
-            plugin.getLogger().info("[Debug DB] Step 2: Tentando configurar o HikariCP (pool de conexões)...");
             setupHikariCP();
-            plugin.getLogger().info("[Debug DB] Step 3: HikariCP configurado. Tentando obter a primeira conexão...");
-
             try (Connection connection = getConnection()) {
                 if (!connection.isValid(5)) {
-                    throw new SQLException("Conexão com o banco de dados é inválida.");
+                    throw new SQLException("Conexão com o banco de dados inválida.");
                 }
-                plugin.getLogger().info("[Debug DB] Step 4: Conexão obtida e validada com sucesso! Conectado a " + detectMariaDBInfo());
+                plugin.getLogger().info("Conectado ao " + detectMariaDBInfo() + " com sucesso!");
             }
-
-            plugin.getLogger().info("[Debug DB] Step 5: Tentando criar as tabelas...");
             createTables();
-            plugin.getLogger().info("[Debug DB] Step 6: Tabelas processadas. Inicialização completa.");
             return true;
-
         } catch (Exception e) {
-            plugin.getLogger().severe("[Debug DB] FALHA NA INICIALIZAÇÃO! O erro ocorreu em algum ponto antes deste log.");
-            plugin.getLogger().severe("Erro: " + e.getMessage());
+            plugin.getLogger().severe("Erro ao inicializar o DatabaseManager: " + e.getMessage());
             e.printStackTrace();
             return false;
         }
@@ -75,10 +66,6 @@ public class DatabaseManager {
         }
     }
 
-    private void updateExistingTables() {
-        // Lógica futura para alterar tabelas sem precisar deletar
-    }
-
     public Connection getConnection() throws SQLException {
         return dataSource.getConnection();
     }
@@ -86,7 +73,6 @@ public class DatabaseManager {
     public void close() {
         if (dataSource != null && !dataSource.isClosed()) {
             dataSource.close();
-            plugin.getLogger().info("Conexão com MariaDB fechada.");
         }
     }
 
@@ -97,8 +83,6 @@ public class DatabaseManager {
             return "MariaDB (versão não detectada)";
         }
     }
-
-    // --- MÉTODOS DE DADOS (SÍNCRONOS) ---
 
     public boolean createClan(String name, String tag, UUID ownerUuid, String ownerName) {
         String insertClan = "INSERT INTO b12_clans (name, tag, owner_uuid) VALUES (?, ?, ?)";
@@ -112,8 +96,11 @@ public class DatabaseManager {
                 stmt.setString(3, ownerUuid.toString());
                 stmt.executeUpdate();
                 try (ResultSet rs = stmt.getGeneratedKeys()) {
-                    if (rs.next()) clanId = rs.getInt(1);
-                    else throw new SQLException("Falha ao obter ID do clã criado.");
+                    if (rs.next()) {
+                        clanId = rs.getInt(1);
+                    } else {
+                        throw new SQLException("Falha ao obter ID do clã criado");
+                    }
                 }
             }
             try (PreparedStatement stmt = connection.prepareStatement(insertMember)) {
@@ -123,10 +110,9 @@ public class DatabaseManager {
                 stmt.executeUpdate();
             }
             connection.commit();
-            plugin.getLogger().info("Clã '" + name + "' criado com sucesso por " + ownerName);
             return true;
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Erro ao criar clã em transação.", e);
+            plugin.getLogger().log(Level.SEVERE, "Erro ao criar clã em transação", e);
             return false;
         }
     }
@@ -141,7 +127,7 @@ public class DatabaseManager {
                 }
             }
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar clã do jogador.", e);
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar clã do jogador", e);
         }
         return null;
     }
@@ -169,5 +155,38 @@ public class DatabaseManager {
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar o nome do jogador " + newName, e);
         }
+    }
+
+    public boolean addClanMember(int clanId, UUID playerUuid, String playerName) {
+        String sql = "INSERT INTO b12_clan_members (clan_id, player_uuid, player_name, role) VALUES (?, ?, ?, 'MEMBER')";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, clanId);
+            ps.setString(2, playerUuid.toString());
+            ps.setString(3, playerName);
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+        } catch (SQLException e) {
+            if (e.getErrorCode() != 1062) { // 1062 = "Duplicate entry"
+                plugin.getLogger().log(Level.SEVERE, "Erro ao adicionar membro ao clã ID " + clanId, e);
+            }
+            return false;
+        }
+    }
+
+    public Clan getClanById(int clanId) {
+        String query = "SELECT * FROM b12_clans WHERE id = ?";
+        try (Connection connection = getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setInt(1, clanId);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Clan(rs.getInt("id"), rs.getString("name"), rs.getString("tag"), UUID.fromString(rs.getString("owner_uuid")), rs.getTimestamp("created_at"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar clã pelo ID " + clanId, e);
+        }
+        return null;
     }
 }
