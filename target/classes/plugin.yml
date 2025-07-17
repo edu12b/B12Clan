@@ -25,3 +25,9 @@ permissions:
   b12clans.admin:
     description: Permissões administrativas do plugin
     default: op
+  b12clans.promover:
+    description: Permissão para promover membros do clã
+    default: op
+  b12clans.rebaixar:
+    description: Permissão para rebaixar membros do clã
+    default: op

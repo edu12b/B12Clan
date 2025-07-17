@@ -29,6 +29,7 @@ public class DatabaseManager {
                 plugin.getLogger().info("Conectado ao " + detectMariaDBInfo() + " com sucesso!");
             }
             createTables();
+            updateExistingTables(); // <-- CORREÇÃO APLICADA AQUI
             return true;
         } catch (Exception e) {
             plugin.getLogger().severe("Erro ao inicializar o DatabaseManager: " + e.getMessage());
@@ -63,6 +64,20 @@ public class DatabaseManager {
             plugin.getLogger().info("Tabela b12_clans verificada/criada com sucesso.");
             stmt.execute(createMembersTable);
             plugin.getLogger().info("Tabela b12_clan_members verificada/criada com sucesso.");
+        }
+    }
+
+    private void updateExistingTables() {
+        try (Connection connection = getConnection(); Statement stmt = connection.createStatement()) {
+            DatabaseMetaData meta = connection.getMetaData();
+            ResultSet rs = meta.getColumns(null, null, "b12_clan_members", "title");
+            if (!rs.next()) {
+                plugin.getLogger().info("Coluna 'title' não encontrada na tabela 'b12_clan_members'. Adicionando...");
+                stmt.executeUpdate("ALTER TABLE b12_clan_members ADD COLUMN title VARCHAR(50) NULL DEFAULT NULL AFTER role");
+                plugin.getLogger().info("Coluna 'title' adicionada com sucesso.");
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao tentar atualizar a estrutura da tabela b12_clan_members.", e);
         }
     }
 
@@ -215,6 +230,68 @@ public class DatabaseManager {
             return affectedRows > 0;
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Erro ao deletar o clã ID " + clanId, e);
+            return false;
+        }
+    }
+    public String getMemberRole(int clanId, UUID playerUuid) {
+        String sql = "SELECT role FROM b12_clan_members WHERE clan_id = ? AND player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            ps.setString(2, playerUuid.toString());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("role");
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao obter cargo do membro " + playerUuid, e);
+        }
+        return null;
+    }
+
+    public boolean updateMemberRole(int clanId, UUID playerUuid, String newRole) {
+        String sql = "UPDATE b12_clan_members SET role = ? WHERE clan_id = ? AND player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newRole);
+            ps.setInt(2, clanId);
+            ps.setString(3, playerUuid.toString());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar cargo do membro " + playerUuid, e);
+            return false;
+        }
+    }
+
+    public boolean updateMemberTitle(int clanId, UUID playerUuid, String title) {
+        // Se o título for nulo ou vazio, definimos como NULL no banco de dados.
+        String finalTitle = (title == null || title.trim().isEmpty()) ? null : title;
+
+        String sql = "UPDATE b12_clan_members SET title = ? WHERE clan_id = ? AND player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            if (finalTitle == null) {
+                ps.setNull(1, Types.VARCHAR);
+            } else {
+                ps.setString(1, finalTitle);
+            }
+
+            ps.setInt(2, clanId);
+            ps.setString(3, playerUuid.toString());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar o título do membro " + playerUuid, e);
             return false;
         }
     }

@@ -94,3 +94,22 @@ messages:
   delete-confirm: "&cAVISO: Esta ação é irreversível! Para confirmar, use /clan deletar confirm."
   not-owner: "&cVocê não é o dono do clã para poder deletá-lo."
   delete-success: "&aO clã %clan_name% foi deletado com sucesso."
+
+  # Comandos /clan promover e /clan rebaixar
+  promote-usage: "&cUso: /clan promover <jogador>"
+  demote-usage: "&cUso: /clan rebaixar <jogador>"
+  no-permission-to-manage-roles: "&cVocê precisa ser Dono do clã para gerir cargos."
+  player-not-member: "&cO jogador %player_name% não é membro do seu clã."
+  cannot-manage-self: "&cVocê não pode alterar o seu próprio cargo."
+  cannot-manage-owner: "&cVocê não pode alterar o cargo do Dono do clã."
+  player-already-that-role: "&cO jogador %player_name% já tem esse cargo."
+  promote-success: "&aVocê promoveu %player_name% para Admin do clã."
+  demote-success: "&aVocê rebaixou %player_name% para Membro do clã."
+  got-promoted: "&aVocê foi promovido para Admin no clã &6%clan_name%&a!"
+  got-demoted: "&cVocê foi rebaixado para Membro no clã &6%clan_name%&c."
+  # --- Comando /clan titulo ---
+  title-usage: "&cUso: /clan titulo <jogador> <titulo...>"
+  title-cleared: "&aVocê removeu o título de %player_name%."
+  title-set: "&aVocê definiu o título de %player_name% para: %title%"
+  no-permission-to-set-title: "&cVocê precisa ser Dono ou Admin do clã para definir títulos."
+  title-too-long: "&cO título é muito longo! (Máximo: 50 caracteres)"
