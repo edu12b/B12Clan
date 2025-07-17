@@ -1,0 +1,58 @@
+# ========================================
+#           B12CLANS - IDIOMAS
+# ========================================
+# Use '&' para códigos de cor e placeholders como %placeholder%
+# serão substituídos automaticamente pelo plugin.
+
+# Prefixo usado na frente da maioria das mensagens. Deixe em branco se não quiser prefixo.
+prefix: "&8[&6B12Clans&8] &r"
+
+# Mensagens gerais
+no-permission: "&cVocê não tem permissão para usar este comando!"
+player-only: "&cEste comando só pode ser executado por um jogador."
+checking-availability: "&eVerificando disponibilidade..."
+no-clan: "&cVocê não faz parte de nenhum clã!"
+
+# Comando /clan criar
+create-usage: "&cUso correto: /clan criar <nome> <tag>"
+create-example: "&7Exemplo: /clan criar MeuClan &#FF0000[MC]"
+create-tag-test-tip: "&7Use /clan ver <tag> para testar sua tag primeiro!"
+invalid-name: "&cNome inválido! Use apenas letras, números e _ (2-32 caracteres)."
+invalid-tag-rules: "&cTag inválida! Conteúdo limpo deve ter de 1 a 16 caracteres."
+invalid-tag-symbols: "&7Símbolos permitidos no conteúdo limpo: a-z, A-Z, 0-9, [], (), -, _"
+tag-too-long: "&cTag muito longa! O tamanho total com cores não pode exceder 1000 caracteres."
+tag-preview: "&7Preview da tag: %tag%"
+tag-clean-content: "&7Conteúdo limpo: §f%clean_tag% §7(Tamanho renderizado: %length% caracteres)"
+already-in-clan: "&cVocê já faz parte de um clã: %clan_name%"
+clan-exists: "&cJá existe um clã com esse nome ou tag!"
+clan-created-success: "&a&lCLÃ CRIADO COM SUCESSO!"
+clan-created-name: "&7Nome: §f%name%"
+clan-created-tag: "&7Tag: %tag%"
+clan-created-leader: "&7Líder: §f%leader%"
+clan-creation-failed: "&cOcorreu um erro inesperado ao criar o clã!"
+
+# Comando /clan info
+info-header: "&6&l=== INFORMAÇÕES DO CLÃ ==="
+info-name: "&7Nome: §f%name%"
+info-tag: "&7Tag: %tag%"
+info-clean-tag: "&7Tag limpa: §f%clean_tag%"
+info-expanded-size: "&7Tamanho renderizado: §f%length% caracteres"
+info-created-at: "&7Criado em: §f%date%"
+info-footer: "&6&l========================"
+
+# Comando /clan ver
+ver-header: "&6&l=== VISUALIZAR TAG ==="
+ver-original-tag: "&7Tag original: §f%tag%"
+ver-rendered-tag: "&7Tag renderizada: %tag_rendered%"
+ver-valid: "&a✓ Tag válida!"
+ver-invalid: "&c✗ Tag inválida!"
+ver-invalid-reason-long: "&c  Motivo: Muito longa (máximo: 1000 caracteres renderizados)"
+ver-invalid-reason-content: "&c  Motivo: Conteúdo limpo inválido (1-16 caracteres)"
+ver-footer: "&6&l=================="
+
+# Comando /clan ajuda
+help-header: "&6&l=== B12CLANS - AJUDA ==="
+help-line-create: "&e/clan criar <nome> <tag> §7- Criar um novo clã"
+help-line-info: "&e/clan info §7- Ver informações do seu clã"
+help-line-ver: "&e/clan ver <tag> §7- Visualizar como uma tag ficará"
+help-footer: "&6&l======================="

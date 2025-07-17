@@ -1,12 +1,12 @@
 name: B12Clans
 version: 1.0.0
-main: com.br.b12clans.B12Clans
+main: com.br.b12clans.Main
 api-version: 1.21
 author: Eduardo12B
 description: Sistema de clãs
 website: https://github.com/TheEternalDark/B12Clan
 
-depend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI]
 
 commands:
   clan:
