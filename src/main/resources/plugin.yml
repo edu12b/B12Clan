@@ -30,4 +30,8 @@ permissions:
     default: op
   b12clans.rebaixar:
     description: Permissão para rebaixar membros do clã
+<<<<<<< HEAD
     default: op
+=======
+    default: op
+>>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7

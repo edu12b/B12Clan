@@ -68,4 +68,8 @@ public class MessagesManager {
     public void sendMessage(CommandSender sender, String path) {
         sendMessage(sender, path, new String[0]);
     }
+<<<<<<< HEAD
 }
+=======
+}
+>>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7

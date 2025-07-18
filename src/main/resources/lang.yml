@@ -76,6 +76,7 @@ messages:
   help-line-invite: "&e/clan convidar <jogador> &7- Convidar um jogador."
   help-line-accept: "&e/clan aceitar <tag> &7- Aceitar um convite de clã."
   help-line-deny: "&e/clan negar <tag> &7- Negar um convite de clã."
+<<<<<<< HEAD
   help-line-sair: "&e/clan sair &7- Sair do clã atual."
   help-line-expulsar: "&e/clan expulsar <jogador> &7- Expulsar um membro."
   help-line-deletar: "&e/clan deletar confirm &7- Deletar o clã (irreversível)."
@@ -87,6 +88,14 @@ messages:
   # Comandos /clan sair e /clan expulsar
   leave-success: "&eVocê saiu do clã &6%clan_name%&e."
   cannot-leave-as-owner: "&cVocê é o dono do clã! Você não pode sair. Use /clan deletar para apagar o clã."
+=======
+  help-footer: "&6&l======================="
+
+
+  # Comandos /clan sair e /clan expulsar
+  leave-success: "&eVocê saiu do clã &6%clan_name%&e."
+  cannot-leave-as-owner: "&cVocê é o dono do clã! Você não pode sair. Use /clan deletar para apagar o clã." # (Comando futuro)
+>>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
   kick-usage: "&cUso: /clan expulsar <jogador>"
   kick-no-permission: "&cVocê não tem permissão para expulsar membros."
   cannot-kick-self: "&cVocê não pode se expulsar."
@@ -112,13 +121,20 @@ messages:
   demote-success: "&aVocê rebaixou %player_name% para Membro do clã."
   got-promoted: "&aVocê foi promovido para Admin no clã &6%clan_name%&a!"
   got-demoted: "&cVocê foi rebaixado para Membro no clã &6%clan_name%&c."
+<<<<<<< HEAD
 
+=======
+>>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
   # --- Comando /clan titulo ---
   title-usage: "&cUso: /clan titulo <jogador> <titulo...>"
   title-cleared: "&aVocê removeu o título de %player_name%."
   title-set: "&aVocê definiu o título de %player_name% para: %title%"
   no-permission-to-set-title: "&cVocê precisa ser Dono ou Admin do clã para definir títulos."
+<<<<<<< HEAD
   title-too-long: "&cO título é muito longo! (Máximo: 50 caracteres)"
 
 # ========================================
 
+=======
+  title-too-long: "&cO título é muito longo! (Máximo: 50 caracteres)"
+>>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
