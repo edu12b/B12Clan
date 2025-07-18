@@ -60,7 +60,7 @@ public class ClanManager {
         if (tag == null || tag.trim().isEmpty()) return false;
 
         // Remove cores para validar apenas o conteúdo
-        String cleanTag = ChatColor.stripColor(translateHexColors(tag));
+        String cleanTag = getCleanTag(tag);
 
         // Verificar se o conteúdo limpo está dentro dos limites mais flexíveis
         if (!TAG_CLEAN_PATTERN.matcher(cleanTag).matches()) {

@@ -5,44 +5,36 @@ import com.br.b12clans.database.DatabaseManager;
 import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.placeholders.ClanPlaceholder;
 import com.br.b12clans.listeners.PlayerListener;
+import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
-public class B12Clans extends JavaPlugin {
-    
-    private static B12Clans instance;
+public class Main extends JavaPlugin {
+
     private DatabaseManager databaseManager;
     private ClanManager clanManager;
-    
+    private MessagesManager messagesManager;
+
     @Override
     public void onEnable() {
-        instance = this;
-        
-        // Salvar configuração padrão
         saveDefaultConfig();
-        
-        // Inicializar banco de dados
+
         this.databaseManager = new DatabaseManager(this);
         if (!databaseManager.initialize()) {
-            getLogger().severe("Falha ao conectar com o banco de dados! Desabilitando plugin...");
+            getLogger().severe("Falha crítica ao inicializar o banco de dados! O B12Clans será desabilitado.");
             getServer().getPluginManager().disablePlugin(this);
             return;
         }
-        
-        // Inicializar gerenciadores
-        this.clanManager = new ClanManager(this);
-        
-        // Registrar comandos
-        registerCommands();
 
-        // Registrar eventos
+        this.messagesManager = new MessagesManager(this);
+        this.clanManager = new ClanManager(this);
+
+        registerCommands();
         registerEvents();
-        
-        // Registrar PlaceholderAPI
         registerPlaceholders();
-        
+
         getLogger().info("B12Clans foi habilitado com sucesso!");
     }
-    
+
     @Override
     public void onDisable() {
         if (databaseManager != null) {
@@ -50,14 +42,16 @@ public class B12Clans extends JavaPlugin {
         }
         getLogger().info("B12Clans foi desabilitado!");
     }
-    
+
     private void registerCommands() {
-        getCommand("clan").setExecutor(new ClanCommand(this));
+        ClanCommand clanCommandExecutor = new ClanCommand(this, clanManager, messagesManager);
+        getCommand("clan").setExecutor(clanCommandExecutor);
+        getCommand("clan").setTabCompleter(clanCommandExecutor);
     }
-    
+
     private void registerPlaceholders() {
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new ClanPlaceholder(this).register();
+            new ClanPlaceholder(this, clanManager).register();
             getLogger().info("PlaceholderAPI integração registrada!");
         } else {
             getLogger().warning("PlaceholderAPI não encontrado! Placeholders não estarão disponíveis.");
@@ -67,16 +61,16 @@ public class B12Clans extends JavaPlugin {
     private void registerEvents() {
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
     }
-    
-    public static B12Clans getInstance() {
-        return instance;
-    }
-    
+
     public DatabaseManager getDatabaseManager() {
         return databaseManager;
     }
-    
+
     public ClanManager getClanManager() {
         return clanManager;
+    }
+
+    public MessagesManager getMessagesManager() {
+        return messagesManager;
     }
 }

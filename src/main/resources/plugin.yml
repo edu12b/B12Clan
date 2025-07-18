@@ -1,12 +1,12 @@
 name: B12Clans
 version: 1.0.0
-main: com.br.b12clans.B12Clans
+main: com.br.b12clans.Main
 api-version: 1.21
 author: Eduardo12B
 description: Sistema de clãs
 website: https://github.com/TheEternalDark/B12Clan
 
-depend: [PlaceholderAPI]
+softdepend: [PlaceholderAPI]
 
 commands:
   clan:
@@ -24,4 +24,10 @@ permissions:
     default: true
   b12clans.admin:
     description: Permissões administrativas do plugin
+    default: op
+  b12clans.promover:
+    description: Permissão para promover membros do clã
+    default: op
+  b12clans.rebaixar:
+    description: Permissão para rebaixar membros do clã
     default: op

@@ -39,6 +39,22 @@ settings:
     # Permitir cores normais nas tags (&a, &b, etc)
     allow-color-codes: true
 
+  # Configurações de cores para placeholders com labels [ ]
+  placeholder-colors:
+    # Cores dos colchetes para diferentes roles
+    member:
+      left-bracket: "&7["      # Cor do colchete esquerdo para membros
+      right-bracket: "&7]"     # Cor do colchete direito para membros
+  
+    leader:
+      left-bracket: "&4["      # Cor do colchete esquerdo para líder e vice-líder
+      right-bracket: "&4]"     # Cor do colchete direito para líder e vice-líder
+  
+    # Cor padrão quando não conseguir detectar o role
+    default:
+      left-bracket: "&8["
+      right-bracket: "&8]"
+
 # Mensagens do plugin (suporte a cores)
 messages:
   no-permission: "&cVocê não tem permissão para usar este comando!"
@@ -53,4 +69,54 @@ messages:
   no-clan: "&cVocê não faz parte de nenhum clã!"
   checking-availability: "&eVerificando disponibilidade..."
 
+# ========================================
+# INSTRUÇÕES DE CONFIGURAÇÃO:
+#
+# 1. PLACEHOLDER COLORS:
+#    - Configure as cores dos colchetes [ ] para cada role
+#    - member: Membros normais do clã
+#    - leader: Líder (criador) e Vice-líder do clã
+#    - default: Cor padrão quando role não detectado
+#
+# 2. PLACEHOLDERS DISPONÍVEIS:
+#    - %b12clans_tag% - Tag do clã sem formatação extra
+#    - %b12clans_tag_label% - Tag com colchetes coloridos por role
+#    - %b12clans_tag_small% - Tag com alfabeto pequeno estilizado
+#    - %b12clans_tag_small_labels% - Tag pequena com colchetes coloridos
+#    - %b12clans_name% - Nome do clã
+#    - %b12clans_has_clan% - Se tem clã (Sim/Não)
+#
+# 3. ROLES DO CLÃ:
+#    - LEADER: Criador do clã (owner)
+#    - VICE_LEADER: Vice-líder do clã (mesmo tratamento que leader)
+#    - MEMBER: Membro normal do clã
+#
+# 4. CORES SUPORTADAS:
+#    - Tradicionais: &a, &b, &c, &d, &e, &f, &0-9
+#    - Hexadecimais: &#FF0000, &#00FF00, etc.
+#    - Formatação: &l (negrito), &o (itálico), &n (sublinhado)
+# ========================================
 
+# ========================================
+# EXEMPLO DE CONFIGURAÇÃO PERSONALIZADA:
+#
+# Para ter cores diferentes:
+# settings:
+#   placeholder-colors:
+#     member:
+#       left-bracket: "&8["     # Cinza escuro para membros
+#       right-bracket: "&8]"
+#     leader:
+#       left-bracket: "&c["     # Vermelho para líderes
+#       right-bracket: "&c]"
+#
+# Para usar cores hexadecimais:
+# settings:
+#   placeholder-colors:
+#     member:
+#       left-bracket: "&#808080[" # Cinza hex
+#       right-bracket: "&#808080]"
+#     leader:
+#       left-bracket: "&#FF0000[" # Vermelho hex
+#       right-bracket: "&#FF0000]"
+# ========================================
