@@ -19,10 +19,9 @@ public class ClanManager {
     private final Map<UUID, Clan> playerClans;
     private final Map<UUID, Integer> pendingInvites;
 
-    // Padrões de validação mais flexíveis
     private static final Pattern HEX_PATTERN = Pattern.compile("&#[a-fA-F0-9]{6}");
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
-    private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_]{1,16}$");
+    private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_&]{1,16}$");
 
     public ClanManager(Main plugin) {
         this.plugin = plugin;
@@ -60,7 +59,7 @@ public class ClanManager {
         if (tag == null || tag.trim().isEmpty()) return false;
 
         // Remove cores para validar apenas o conteúdo
-        String cleanTag = getCleanTag(tag);
+        String cleanTag = ChatColor.stripColor(translateHexColors(tag));
 
         // Verificar se o conteúdo limpo está dentro dos limites mais flexíveis
         if (!TAG_CLEAN_PATTERN.matcher(cleanTag).matches()) {
@@ -77,7 +76,7 @@ public class ClanManager {
 
         // Traduzir cores hexadecimais &#RRGGBB para formato Bukkit
         return HEX_PATTERN.matcher(message).replaceAll(match -> {
-            String hex = match.group().substring(2); // Remove &#
+            String hex = match.group().substring(2);
             StringBuilder magic = new StringBuilder("§x");
             for (char c : hex.toCharArray()) {
                 magic.append("§").append(c);

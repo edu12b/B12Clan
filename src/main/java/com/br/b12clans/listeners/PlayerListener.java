@@ -37,5 +37,8 @@ public class PlayerListener implements Listener {
     public void onPlayerQuit(PlayerQuitEvent event) {
         // Remover dados do cache para economizar memória
         clanManager.unloadPlayerClan(event.getPlayer().getUniqueId());
+
+        // Limpar dados do chat
+        plugin.getClanChatManager().handlePlayerLeave(event.getPlayer().getUniqueId());
     }
 }

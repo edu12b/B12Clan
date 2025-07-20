@@ -2,10 +2,7 @@ package com.br.b12clans.managers;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.models.Clan;
-<<<<<<< HEAD
 import com.br.b12clans.utils.SmallTextConverter;
-=======
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
@@ -22,13 +19,9 @@ public class ClanManager {
     private final Map<UUID, Clan> playerClans;
     private final Map<UUID, Integer> pendingInvites;
 
-<<<<<<< HEAD
-    // Padrões de validação mais flexíveis
-=======
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
     private static final Pattern HEX_PATTERN = Pattern.compile("&#[a-fA-F0-9]{6}");
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
-    private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_]{1,16}$");
+    private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_&]{1,16}$");
 
     public ClanManager(Main plugin) {
         this.plugin = plugin;
@@ -64,7 +57,6 @@ public class ClanManager {
 
     public boolean isValidClanTag(String tag) {
         if (tag == null || tag.trim().isEmpty()) return false;
-<<<<<<< HEAD
 
         // Remove cores para validar apenas o conteúdo
         String cleanTag = ChatColor.stripColor(translateHexColors(tag));
@@ -75,23 +67,14 @@ public class ClanManager {
         }
 
         // Verificar se a tag expandida não é excessivamente longa (limite de 1000 caracteres)
-=======
-        String cleanTag = getCleanTag(tag);
-        if (!TAG_CLEAN_PATTERN.matcher(cleanTag).matches()) {
-            return false;
-        }
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
         String expandedTag = translateColors(tag);
         return expandedTag.length() <= 1000;
     }
 
     public String translateHexColors(String message) {
         if (message == null) return null;
-<<<<<<< HEAD
 
         // Traduzir cores hexadecimais &#RRGGBB para formato Bukkit
-=======
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
         return HEX_PATTERN.matcher(message).replaceAll(match -> {
             String hex = match.group().substring(2);
             StringBuilder magic = new StringBuilder("§x");
@@ -104,7 +87,6 @@ public class ClanManager {
 
     public String translateColors(String message) {
         if (message == null) return null;
-<<<<<<< HEAD
 
         // Primeiro traduzir cores hexadecimais &#RRGGBB
         String hexTranslated = HEX_PATTERN.matcher(message).replaceAll(match -> {
@@ -117,10 +99,17 @@ public class ClanManager {
         });
 
         // Depois traduzir cores normais, mas preservar códigos hex já processados
-=======
-        String hexTranslated = translateHexColors(message);
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
         return ChatColor.translateAlternateColorCodes('&', hexTranslated);
+    }
+
+    /**
+     * Converte underscores em espaços para melhor legibilidade
+     * @param name Nome com possíveis underscores
+     * @return Nome com espaços no lugar dos underscores
+     */
+    public String formatDisplayName(String name) {
+        if (name == null) return null;
+        return name.replace("_", " ");
     }
 
     public void loadPlayerClan(UUID playerUuid) {
@@ -140,7 +129,6 @@ public class ClanManager {
         return playerClans.get(playerUuid);
     }
 
-<<<<<<< HEAD
     public void updatePlayerClan(UUID playerUuid, Clan clan) {
         if (clan != null) {
             playerClans.put(playerUuid, clan);
@@ -149,8 +137,6 @@ public class ClanManager {
         }
     }
 
-=======
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7
     public String getPlayerClanTag(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
         return clan != null ? translateColors(clan.getTag()) : "";
@@ -158,7 +144,7 @@ public class ClanManager {
 
     public String getPlayerClanName(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
-        return clan != null ? clan.getName() : "";
+        return clan != null ? formatDisplayName(clan.getName()) : "";
     }
 
     public boolean isTagTooLong(String tag) {
@@ -175,7 +161,6 @@ public class ClanManager {
         if (tag == null) return "";
         return ChatColor.stripColor(translateHexColors(tag));
     }
-<<<<<<< HEAD
 
     /**
      * Obtém a tag do clã com colchetes coloridos baseado no role do jogador
@@ -290,6 +275,3 @@ public class ClanManager {
         plugin.getLogger().info("==================");
     }
 }
-=======
-}
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7

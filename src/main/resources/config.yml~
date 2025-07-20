@@ -166,4 +166,27 @@ discord:
 # - %b12clans_kdr% - KDR do jogador
 # - %b12clans_kills% - Kills do jogador
 # - %b12clans_deaths% - Deaths do jogador
-
+#
+# 🎯 SISTEMA DE KDR:
+# - Kills e deaths são automaticamente rastreados
+# - KDR é calculado como kills/deaths
+# - Se deaths = 0, KDR = kills (ou 0.00 se kills = 0)
+# - Dados persistem no banco de dados
+#
+# 🏠 SISTEMA DE HOME:
+# - Líderes sempre podem definir/limpar home
+# - Vice-líderes podem definir se permitido na config
+# - Todos os membros podem usar /clan home
+# - Home salva mundo, coordenadas e rotação
+#
+# 🤝 SISTEMA DE ALIANÇAS E RIVALIDADES:
+# - Líderes sempre podem gerenciar
+# - Vice-líderes podem gerenciar se permitido na config
+# - Alianças e rivalidades são bidirecionais
+# - Não pode aliar/rivalizar com próprio clã
+#
+# 💰 SISTEMA DE TAXAS:
+# - Apenas líderes podem definir
+# - Valor salvo no banco de dados
+# - Preparado para futuras implementações de cobrança
+# ========================================

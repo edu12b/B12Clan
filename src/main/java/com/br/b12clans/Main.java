@@ -1,11 +1,19 @@
 package com.br.b12clans;
 
+import com.br.b12clans.chat.ClanChatManager;
+import com.br.b12clans.chat.DiscordManager;
+import com.br.b12clans.commands.ClanChatCommand;
+import com.br.b12clans.commands.AllyChatCommand;
+import com.br.b12clans.commands.DiscordCommand;
 import com.br.b12clans.commands.ClanCommand;
 import com.br.b12clans.database.DatabaseManager;
 import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.placeholders.ClanPlaceholder;
 import com.br.b12clans.listeners.PlayerListener;
+import com.br.b12clans.listeners.KDRListener;
 import com.br.b12clans.utils.MessagesManager;
+import com.br.b12clans.listeners.ChatListener;
+import com.br.b12clans.managers.EconomyManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
 public class Main extends JavaPlugin {
@@ -13,6 +21,9 @@ public class Main extends JavaPlugin {
     private DatabaseManager databaseManager;
     private ClanManager clanManager;
     private MessagesManager messagesManager;
+    private ClanChatManager clanChatManager;
+    private DiscordManager discordManager;
+    private EconomyManager economyManager;
 
     @Override
     public void onEnable() {
@@ -27,6 +38,9 @@ public class Main extends JavaPlugin {
 
         this.messagesManager = new MessagesManager(this);
         this.clanManager = new ClanManager(this);
+        this.clanChatManager = new ClanChatManager(this);
+        this.discordManager = new DiscordManager(this);
+        this.economyManager = new EconomyManager(this);
 
         registerCommands();
         registerEvents();
@@ -40,13 +54,34 @@ public class Main extends JavaPlugin {
         if (databaseManager != null) {
             databaseManager.close();
         }
+        if (discordManager != null) {
+            discordManager.shutdown();
+        }
         getLogger().info("B12Clans foi desabilitado!");
     }
 
     private void registerCommands() {
         ClanCommand clanCommandExecutor = new ClanCommand(this, clanManager, messagesManager);
+        ClanChatCommand clanChatCommand = new ClanChatCommand(this, clanManager, clanChatManager, messagesManager);
+        AllyChatCommand allyChatCommand = new AllyChatCommand(this, clanManager, clanChatManager, messagesManager);
+        DiscordCommand discordCommand = new DiscordCommand(this, discordManager, messagesManager);
+
         getCommand("clan").setExecutor(clanCommandExecutor);
         getCommand("clan").setTabCompleter(clanCommandExecutor);
+        getCommand(".").setExecutor(clanChatCommand);
+        getCommand(".").setTabCompleter(clanChatCommand);
+        getCommand("ally").setExecutor(allyChatCommand);
+        getCommand("ally").setTabCompleter(allyChatCommand);
+        getCommand("discord").setExecutor(discordCommand);
+        getCommand("discord").setTabCompleter(discordCommand);
+        getCommand("vincular").setExecutor(discordCommand);
+        getCommand("desvincular").setExecutor(discordCommand);
+
+        // Registrar comandos bancários como aliases do comando principal
+        getCommand("bank").setExecutor(clanCommandExecutor);
+        getCommand("bank").setTabCompleter(clanCommandExecutor);
+        getCommand("banco").setExecutor(clanCommandExecutor);
+        getCommand("banco").setTabCompleter(clanCommandExecutor);
     }
 
     private void registerPlaceholders() {
@@ -60,6 +95,8 @@ public class Main extends JavaPlugin {
 
     private void registerEvents() {
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
+        getServer().getPluginManager().registerEvents(new ChatListener(this), this);
+        getServer().getPluginManager().registerEvents(new KDRListener(this), this);
     }
 
     public DatabaseManager getDatabaseManager() {
@@ -73,8 +110,16 @@ public class Main extends JavaPlugin {
     public MessagesManager getMessagesManager() {
         return messagesManager;
     }
-<<<<<<< HEAD
+
+    public ClanChatManager getClanChatManager() {
+        return clanChatManager;
+    }
+
+    public DiscordManager getDiscordManager() {
+        return discordManager;
+    }
+
+    public EconomyManager getEconomyManager() {
+        return economyManager;
+    }
 }
-=======
-}
->>>>>>> 345bc2f547995d01b30004f0dca595094b318fa7

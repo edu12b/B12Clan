@@ -7,6 +7,8 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.sql.*;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Level;
 
@@ -29,7 +31,7 @@ public class DatabaseManager {
                 plugin.getLogger().info("Conectado ao " + detectMariaDBInfo() + " com sucesso!");
             }
             createTables();
-            updateExistingTables(); // <-- CORREÇÃO APLICADA AQUI
+            updateExistingTables();
             return true;
         } catch (Exception e) {
             plugin.getLogger().severe("Erro ao inicializar o DatabaseManager: " + e.getMessage());
@@ -57,27 +59,152 @@ public class DatabaseManager {
     }
 
     private void createTables() throws SQLException {
-        String createClansTable = "CREATE TABLE IF NOT EXISTS b12_clans (id INT AUTO_INCREMENT PRIMARY KEY, name TEXT NOT NULL, tag TEXT NOT NULL, owner_uuid VARCHAR(36) NOT NULL, created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, INDEX idx_owner (owner_uuid), INDEX idx_name (name(32)), INDEX idx_tag (tag(32))) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
-        String createMembersTable = "CREATE TABLE IF NOT EXISTS b12_clan_members (id INT AUTO_INCREMENT PRIMARY KEY, clan_id INT NOT NULL, player_uuid VARCHAR(36) NOT NULL, player_name TEXT NOT NULL, role ENUM('OWNER', 'ADMIN', 'MEMBER') DEFAULT 'MEMBER', joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (clan_id) REFERENCES b12_clans(id) ON DELETE CASCADE, UNIQUE KEY unique_member (clan_id, player_uuid), INDEX idx_player (player_uuid), INDEX idx_clan (clan_id)) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+        String createClansTable = "CREATE TABLE IF NOT EXISTS b12_clans (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "name TEXT NOT NULL, " +
+                "tag TEXT NOT NULL, " +
+                "owner_uuid VARCHAR(36) NOT NULL, " +
+                "description TEXT DEFAULT NULL, " +
+                "bank_balance DECIMAL(15,2) DEFAULT 0.00, " +
+                "home_world VARCHAR(50) DEFAULT NULL, " +
+                "home_x DOUBLE DEFAULT NULL, " +
+                "home_y DOUBLE DEFAULT NULL, " +
+                "home_z DOUBLE DEFAULT NULL, " +
+                "home_yaw FLOAT DEFAULT NULL, " +
+                "home_pitch FLOAT DEFAULT NULL, " +
+                "fee_amount DECIMAL(10,2) DEFAULT 0.00, " +
+                "banner_data TEXT DEFAULT NULL, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "INDEX idx_owner (owner_uuid), " +
+                "INDEX idx_name (name(32)), " +
+                "INDEX idx_tag (tag(32))" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+        String createMembersTable = "CREATE TABLE IF NOT EXISTS b12_clan_members (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "clan_id INT NOT NULL, " +
+                "player_uuid VARCHAR(36) NOT NULL, " +
+                "player_name TEXT NOT NULL, " +
+                "role ENUM('OWNER', 'VICE_LEADER', 'ADMIN', 'MEMBER') DEFAULT 'MEMBER', " +
+                "kills INT DEFAULT 0, " +
+                "deaths INT DEFAULT 0, " +
+                "joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "FOREIGN KEY (clan_id) REFERENCES b12_clans(id) ON DELETE CASCADE, " +
+                "UNIQUE KEY unique_member (clan_id, player_uuid), " +
+                "INDEX idx_player (player_uuid), " +
+                "INDEX idx_clan (clan_id)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+        String createDiscordLinksTable = "CREATE TABLE IF NOT EXISTS b12_discord_links (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "player_uuid VARCHAR(36) NOT NULL UNIQUE, " +
+                "discord_user_id VARCHAR(20) NOT NULL UNIQUE, " +
+                "linked_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "INDEX idx_player (player_uuid), " +
+                "INDEX idx_discord (discord_user_id)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+        String createAlliesTable = "CREATE TABLE IF NOT EXISTS b12_clan_allies (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "clan_id INT NOT NULL, " +
+                "ally_clan_id INT NOT NULL, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "FOREIGN KEY (clan_id) REFERENCES b12_clans(id) ON DELETE CASCADE, " +
+                "FOREIGN KEY (ally_clan_id) REFERENCES b12_clans(id) ON DELETE CASCADE, " +
+                "UNIQUE KEY unique_alliance (clan_id, ally_clan_id), " +
+                "INDEX idx_clan (clan_id), " +
+                "INDEX idx_ally (ally_clan_id)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
+        String createRivalsTable = "CREATE TABLE IF NOT EXISTS b12_clan_rivals (" +
+                "id INT AUTO_INCREMENT PRIMARY KEY, " +
+                "clan_id INT NOT NULL, " +
+                "rival_clan_id INT NOT NULL, " +
+                "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
+                "FOREIGN KEY (clan_id) REFERENCES b12_clans(id) ON DELETE CASCADE, " +
+                "FOREIGN KEY (rival_clan_id) REFERENCES b12_clans(id) ON DELETE CASCADE, " +
+                "UNIQUE KEY unique_rivalry (clan_id, rival_clan_id), " +
+                "INDEX idx_clan (clan_id), " +
+                "INDEX idx_rival (rival_clan_id)" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
         try (Connection connection = getConnection(); Statement stmt = connection.createStatement()) {
             stmt.execute(createClansTable);
             plugin.getLogger().info("Tabela b12_clans verificada/criada com sucesso.");
             stmt.execute(createMembersTable);
             plugin.getLogger().info("Tabela b12_clan_members verificada/criada com sucesso.");
+            stmt.execute(createDiscordLinksTable);
+            plugin.getLogger().info("Tabela b12_discord_links verificada/criada com sucesso.");
+            stmt.execute(createAlliesTable);
+            plugin.getLogger().info("Tabela b12_clan_allies verificada/criada com sucesso.");
+            stmt.execute(createRivalsTable);
+            plugin.getLogger().info("Tabela b12_clan_rivals verificada/criada com sucesso.");
         }
     }
 
     private void updateExistingTables() {
         try (Connection connection = getConnection(); Statement stmt = connection.createStatement()) {
             DatabaseMetaData meta = connection.getMetaData();
+
+            // Verificar e adicionar coluna title se não existir
             ResultSet rs = meta.getColumns(null, null, "b12_clan_members", "title");
             if (!rs.next()) {
                 plugin.getLogger().info("Coluna 'title' não encontrada na tabela 'b12_clan_members'. Adicionando...");
                 stmt.executeUpdate("ALTER TABLE b12_clan_members ADD COLUMN title VARCHAR(50) NULL DEFAULT NULL AFTER role");
                 plugin.getLogger().info("Coluna 'title' adicionada com sucesso.");
             }
+            rs.close();
+
+            // Verificar e adicionar colunas de KDR se não existirem
+            rs = meta.getColumns(null, null, "b12_clan_members", "kills");
+            if (!rs.next()) {
+                plugin.getLogger().info("Colunas de KDR não encontradas. Adicionando...");
+                stmt.executeUpdate("ALTER TABLE b12_clan_members ADD COLUMN kills INT DEFAULT 0 AFTER title");
+                stmt.executeUpdate("ALTER TABLE b12_clan_members ADD COLUMN deaths INT DEFAULT 0 AFTER kills");
+                plugin.getLogger().info("Colunas de KDR adicionadas com sucesso.");
+            }
+            rs.close();
+
+            // Verificar e adicionar colunas de home se não existirem
+            rs = meta.getColumns(null, null, "b12_clans", "description");
+            if (!rs.next()) {
+                plugin.getLogger().info("Colunas estendidas não encontradas na tabela 'b12_clans'. Adicionando...");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN description TEXT DEFAULT NULL AFTER owner_uuid");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN home_world VARCHAR(50) DEFAULT NULL AFTER description");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN home_x DOUBLE DEFAULT NULL AFTER home_world");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN home_y DOUBLE DEFAULT NULL AFTER home_x");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN home_z DOUBLE DEFAULT NULL AFTER home_y");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN home_yaw FLOAT DEFAULT NULL AFTER home_z");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN home_pitch FLOAT DEFAULT NULL AFTER home_yaw");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN fee_amount DECIMAL(10,2) DEFAULT 0.00 AFTER home_pitch");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN banner_data TEXT DEFAULT NULL AFTER fee_amount");
+                plugin.getLogger().info("Colunas estendidas adicionadas com sucesso.");
+            }
+            rs.close();
+
+            // Verificar e atualizar ENUM de roles se necessário
+            rs = stmt.executeQuery("SHOW COLUMNS FROM b12_clan_members LIKE 'role'");
+            if (rs.next()) {
+                String type = rs.getString("Type");
+                if (!type.contains("VICE_LEADER")) {
+                    plugin.getLogger().info("Atualizando ENUM de roles para incluir VICE_LEADER...");
+                    stmt.executeUpdate("ALTER TABLE b12_clan_members MODIFY COLUMN role ENUM('OWNER', 'VICE_LEADER', 'ADMIN', 'MEMBER') DEFAULT 'MEMBER'");
+                    plugin.getLogger().info("ENUM de roles atualizado com sucesso.");
+                }
+            }
+            rs.close();
+
+            // Verificar e adicionar coluna bank_balance se não existir
+            rs = meta.getColumns(null, null, "b12_clans", "bank_balance");
+            if (!rs.next()) {
+                plugin.getLogger().info("Coluna 'bank_balance' não encontrada na tabela 'b12_clans'. Adicionando...");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN bank_balance DECIMAL(15,2) DEFAULT 0.00 AFTER description");
+                plugin.getLogger().info("Coluna 'bank_balance' adicionada com sucesso.");
+            }
+            rs.close();
+
         } catch (SQLException e) {
-            plugin.getLogger().log(Level.SEVERE, "Erro ao tentar atualizar a estrutura da tabela b12_clan_members.", e);
+            plugin.getLogger().log(Level.SEVERE, "Erro ao tentar atualizar estruturas das tabelas.", e);
         }
     }
 
@@ -204,6 +331,23 @@ public class DatabaseManager {
         }
         return null;
     }
+
+    public Clan getClanByTag(String tag) {
+        String query = "SELECT * FROM b12_clans WHERE tag = ?";
+        try (Connection connection = getConnection();
+             PreparedStatement stmt = connection.prepareStatement(query)) {
+            stmt.setString(1, tag);
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return new Clan(rs.getInt("id"), rs.getString("name"), rs.getString("tag"), UUID.fromString(rs.getString("owner_uuid")), rs.getTimestamp("created_at"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar clã pela tag " + tag, e);
+        }
+        return null;
+    }
+
     public boolean removeClanMember(int clanId, UUID playerUuid) {
         String sql = "DELETE FROM b12_clan_members WHERE clan_id = ? AND player_uuid = ?";
         try (Connection conn = getConnection();
@@ -233,6 +377,7 @@ public class DatabaseManager {
             return false;
         }
     }
+
     public String getMemberRole(int clanId, UUID playerUuid) {
         String sql = "SELECT role FROM b12_clan_members WHERE clan_id = ? AND player_uuid = ?";
         try (Connection conn = getConnection();
@@ -292,6 +437,543 @@ public class DatabaseManager {
 
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar o título do membro " + playerUuid, e);
+            return false;
+        }
+    }
+
+    // ========================================
+    // MÉTODOS PARA VINCULAÇÕES DISCORD
+    // ========================================
+
+    public boolean saveDiscordLink(UUID playerUuid, String discordUserId) {
+        String sql = "INSERT INTO b12_discord_links (player_uuid, discord_user_id) VALUES (?, ?) ON DUPLICATE KEY UPDATE discord_user_id = VALUES(discord_user_id), linked_at = CURRENT_TIMESTAMP";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerUuid.toString());
+            ps.setString(2, discordUserId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao salvar vinculação Discord para " + playerUuid, e);
+            return false;
+        }
+    }
+
+    public boolean removeDiscordLink(UUID playerUuid) {
+        String sql = "DELETE FROM b12_discord_links WHERE player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerUuid.toString());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao remover vinculação Discord para " + playerUuid, e);
+            return false;
+        }
+    }
+
+    public String getDiscordUserId(UUID playerUuid) {
+        String sql = "SELECT discord_user_id FROM b12_discord_links WHERE player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerUuid.toString());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("discord_user_id");
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar ID Discord para " + playerUuid, e);
+        }
+        return null;
+    }
+
+    public UUID getPlayerUuidByDiscordId(String discordUserId) {
+        String sql = "SELECT player_uuid FROM b12_discord_links WHERE discord_user_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, discordUserId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return UUID.fromString(rs.getString("player_uuid"));
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar UUID do jogador para Discord ID " + discordUserId, e);
+        }
+        return null;
+    }
+
+    public Map<UUID, String> loadAllDiscordLinks() {
+        Map<UUID, String> links = new HashMap<>();
+        String sql = "SELECT player_uuid, discord_user_id FROM b12_discord_links";
+
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql);
+             ResultSet rs = ps.executeQuery()) {
+
+            while (rs.next()) {
+                UUID playerUuid = UUID.fromString(rs.getString("player_uuid"));
+                String discordUserId = rs.getString("discord_user_id");
+                links.put(playerUuid, discordUserId);
+            }
+
+            plugin.getLogger().info("Carregadas " + links.size() + " vinculações Discord do banco de dados.");
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao carregar vinculações Discord", e);
+        }
+
+        return links;
+    }
+
+    public boolean isPlayerLinkedToDiscord(UUID playerUuid) {
+        return getDiscordUserId(playerUuid) != null;
+    }
+
+    public boolean isDiscordIdLinked(String discordUserId) {
+        return getPlayerUuidByDiscordId(discordUserId) != null;
+    }
+
+    // ========================================
+    // MÉTODOS PARA KDR
+    // ========================================
+
+    public boolean updatePlayerKills(UUID playerUuid, int kills) {
+        String sql = "UPDATE b12_clan_members SET kills = kills + ? WHERE player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, kills);
+            ps.setString(2, playerUuid.toString());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar kills do jogador " + playerUuid, e);
+            return false;
+        }
+    }
+
+    public boolean updatePlayerDeaths(UUID playerUuid, int deaths) {
+        String sql = "UPDATE b12_clan_members SET deaths = deaths + ? WHERE player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, deaths);
+            ps.setString(2, playerUuid.toString());
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar deaths do jogador " + playerUuid, e);
+            return false;
+        }
+    }
+
+    public int[] getPlayerKDR(UUID playerUuid) {
+        String sql = "SELECT kills, deaths FROM b12_clan_members WHERE player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerUuid.toString());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new int[]{rs.getInt("kills"), rs.getInt("deaths")};
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar KDR do jogador " + playerUuid, e);
+        }
+        return new int[]{0, 0};
+    }
+
+    // ========================================
+    // MÉTODOS PARA CLÃS ESTENDIDOS
+    // ========================================
+
+    public boolean updateClanDescription(int clanId, String description) {
+        String sql = "UPDATE b12_clans SET description = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, description);
+            ps.setInt(2, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar descrição do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    public String getClanDescription(int clanId) {
+        String sql = "SELECT description FROM b12_clans WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getString("description");
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar descrição do clã " + clanId, e);
+        }
+        return null;
+    }
+
+    public boolean setClanHome(int clanId, String world, double x, double y, double z, float yaw, float pitch) {
+        String sql = "UPDATE b12_clans SET home_world = ?, home_x = ?, home_y = ?, home_z = ?, home_yaw = ?, home_pitch = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, world);
+            ps.setDouble(2, x);
+            ps.setDouble(3, y);
+            ps.setDouble(4, z);
+            ps.setFloat(5, yaw);
+            ps.setFloat(6, pitch);
+            ps.setInt(7, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao definir home do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    public boolean clearClanHome(int clanId) {
+        String sql = "UPDATE b12_clans SET home_world = NULL, home_x = NULL, home_y = NULL, home_z = NULL, home_yaw = NULL, home_pitch = NULL WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao limpar home do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    public Object[] getClanHome(int clanId) {
+        String sql = "SELECT home_world, home_x, home_y, home_z, home_yaw, home_pitch FROM b12_clans WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String world = rs.getString("home_world");
+                    if (world != null) {
+                        return new Object[]{
+                                world,
+                                rs.getDouble("home_x"),
+                                rs.getDouble("home_y"),
+                                rs.getDouble("home_z"),
+                                rs.getFloat("home_yaw"),
+                                rs.getFloat("home_pitch")
+                        };
+                    }
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar home do clã " + clanId, e);
+        }
+        return null;
+    }
+
+    public boolean updateClanTag(int clanId, String newTag) {
+        String sql = "UPDATE b12_clans SET tag = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, newTag);
+            ps.setInt(2, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar tag do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    public boolean setClanFee(int clanId, double amount) {
+        String sql = "UPDATE b12_clans SET fee_amount = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, amount);
+            ps.setInt(2, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao definir taxa do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    public double getClanFee(int clanId) {
+        String sql = "SELECT fee_amount FROM b12_clans WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("fee_amount");
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar taxa do clã " + clanId, e);
+        }
+        return 0.0;
+    }
+
+    // ========================================
+    // MÉTODOS PARA ALIANÇAS E RIVALIDADES
+    // ========================================
+
+    public boolean addAlly(int clanId, int allyClanId) {
+        String sql = "INSERT IGNORE INTO b12_clan_allies (clan_id, ally_clan_id) VALUES (?, ?), (?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            ps.setInt(2, allyClanId);
+            ps.setInt(3, allyClanId);
+            ps.setInt(4, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao adicionar aliança entre " + clanId + " e " + allyClanId, e);
+            return false;
+        }
+    }
+
+    public boolean removeAlly(int clanId, int allyClanId) {
+        String sql = "DELETE FROM b12_clan_allies WHERE (clan_id = ? AND ally_clan_id = ?) OR (clan_id = ? AND ally_clan_id = ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            ps.setInt(2, allyClanId);
+            ps.setInt(3, allyClanId);
+            ps.setInt(4, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao remover aliança entre " + clanId + " e " + allyClanId, e);
+            return false;
+        }
+    }
+
+    public boolean addRival(int clanId, int rivalClanId) {
+        String sql = "INSERT IGNORE INTO b12_clan_rivals (clan_id, rival_clan_id) VALUES (?, ?), (?, ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            ps.setInt(2, rivalClanId);
+            ps.setInt(3, rivalClanId);
+            ps.setInt(4, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao adicionar rivalidade entre " + clanId + " e " + rivalClanId, e);
+            return false;
+        }
+    }
+
+    public boolean removeRival(int clanId, int rivalClanId) {
+        String sql = "DELETE FROM b12_clan_rivals WHERE (clan_id = ? AND rival_clan_id = ?) OR (clan_id = ? AND rival_clan_id = ?)";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            ps.setInt(2, rivalClanId);
+            ps.setInt(3, rivalClanId);
+            ps.setInt(4, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao remover rivalidade entre " + clanId + " e " + rivalClanId, e);
+            return false;
+        }
+    }
+
+    public boolean areAllies(int clanId1, int clanId2) {
+        String sql = "SELECT 1 FROM b12_clan_allies WHERE clan_id = ? AND ally_clan_id = ? LIMIT 1";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId1);
+            ps.setInt(2, clanId2);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao verificar aliança entre " + clanId1 + " e " + clanId2, e);
+        }
+        return false;
+    }
+
+    public boolean areRivals(int clanId1, int clanId2) {
+        String sql = "SELECT 1 FROM b12_clan_rivals WHERE clan_id = ? AND rival_clan_id = ? LIMIT 1";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId1);
+            ps.setInt(2, clanId2);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                return rs.next();
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao verificar rivalidade entre " + clanId1 + " e " + clanId2, e);
+        }
+        return false;
+    }
+
+    // ========================================
+    // MÉTODOS PARA SISTEMA BANCÁRIO
+    // ========================================
+
+    /**
+     * Obtém o saldo bancário do clã
+     * @param clanId ID do clã
+     * @return Saldo bancário
+     */
+    public double getClanBankBalance(int clanId) {
+        String sql = "SELECT bank_balance FROM b12_clans WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getDouble("bank_balance");
+                }
+            }
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar saldo bancário do clã " + clanId, e);
+        }
+        return 0.0;
+    }
+
+    /**
+     * Atualiza o saldo bancário do clã
+     * @param clanId ID do clã
+     * @param newBalance Novo saldo
+     * @return true se atualizou com sucesso
+     */
+    public boolean updateClanBankBalance(int clanId, double newBalance) {
+        String sql = "UPDATE b12_clans SET bank_balance = ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, newBalance);
+            ps.setInt(2, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar saldo bancário do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Deposita uma quantia no banco do clã
+     * @param clanId ID do clã
+     * @param amount Quantia a depositar
+     * @return true se depositou com sucesso
+     */
+    public boolean depositToClanBank(int clanId, double amount) {
+        String sql = "UPDATE b12_clans SET bank_balance = bank_balance + ? WHERE id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, amount);
+            ps.setInt(2, clanId);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao depositar no banco do clã " + clanId, e);
+            return false;
+        }
+    }
+
+    /**
+     * Retira uma quantia do banco do clã
+     * @param clanId ID do clã
+     * @param amount Quantia a retirar
+     * @return true se retirou com sucesso
+     */
+    public boolean withdrawFromClanBank(int clanId, double amount) {
+        String sql = "UPDATE b12_clans SET bank_balance = bank_balance - ? WHERE id = ? AND bank_balance >= ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setDouble(1, amount);
+            ps.setInt(2, clanId);
+            ps.setDouble(3, amount);
+
+            int affectedRows = ps.executeUpdate();
+            return affectedRows > 0;
+
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao retirar do banco do clã " + clanId, e);
             return false;
         }
     }
