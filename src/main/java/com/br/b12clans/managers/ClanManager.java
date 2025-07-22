@@ -1,12 +1,16 @@
+// ARQUIVO: src/main/java/com/br/b12clans/managers/ClanManager.java
 package com.br.b12clans.managers;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.models.Clan;
+import com.br.b12clans.utils.MessagesManager;
 import com.br.b12clans.utils.SmallTextConverter;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -16,6 +20,7 @@ import java.util.regex.Pattern;
 public class ClanManager {
 
     private final Main plugin;
+    private final MessagesManager messages; // <-- LINHA ADICIONADA
     private final Map<UUID, Clan> playerClans;
     private final Map<UUID, Integer> pendingInvites;
 
@@ -25,12 +30,64 @@ public class ClanManager {
 
     public ClanManager(Main plugin) {
         this.plugin = plugin;
+        this.messages = plugin.getMessagesManager(); // <-- LINHA ADICIONADA
         this.playerClans = new ConcurrentHashMap<>();
         this.pendingInvites = new ConcurrentHashMap<>();
     }
 
+    public void broadcastToClan(Clan clan, String messageKey, String... placeholders) {
+        if (clan == null) return;
+        String messageToSend = messages.getMessage(messageKey, placeholders);
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            Clan playerClan = getPlayerClan(onlinePlayer.getUniqueId());
+            if (playerClan != null && playerClan.getId() == clan.getId()) {
+                onlinePlayer.sendMessage(messageToSend);
+            }
+        }
+    }
+
+    public void unloadClanFromAllMembers(Clan clan) {
+        if (clan == null) return;
+        for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
+            Clan playerClan = getPlayerClan(onlinePlayer.getUniqueId());
+            if (playerClan != null && playerClan.getId() == clan.getId()) {
+                unloadPlayerClan(onlinePlayer.getUniqueId());
+            }
+        }
+    }
+
     public void addInvite(UUID invitedPlayer, int clanId) {
         pendingInvites.put(invitedPlayer, clanId);
+    }
+
+    // Método corrigido para buscar convite por nome do clã
+    public Integer getInvite(UUID playerUUID, String clanName) {
+        Integer clanId = pendingInvites.get(playerUUID);
+        if (clanId != null) {
+            Clan clan = plugin.getDatabaseManager().getClanById(clanId);
+            if (clan != null && clan.getName().equalsIgnoreCase(clanName)) {
+                return clanId;
+            }
+        }
+        return null;
+    }
+
+    // Método para o tab-complete
+    public List<String> getPendingInvitesForPlayer(UUID playerUUID) {
+        List<String> clanNames = new ArrayList<>();
+        Integer clanId = pendingInvites.get(playerUUID);
+        if (clanId != null) {
+            Clan clan = plugin.getDatabaseManager().getClanById(clanId);
+            if (clan != null) {
+                clanNames.add(clan.getName());
+            }
+        }
+        return clanNames;
+    }
+
+    public void removeInvite(UUID invitedPlayer, String clanName) {
+        // Lógica para remover o convite específico
+        pendingInvites.remove(invitedPlayer);
     }
 
     public Integer getPendingInvite(UUID invitedPlayer) {
@@ -42,13 +99,12 @@ public class ClanManager {
     }
 
     public CompletableFuture<Clan> getClanById(int clanId) {
-        return CompletableFuture.supplyAsync(() ->
-                plugin.getDatabaseManager().getClanById(clanId)
-        );
+        return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().getClanById(clanId));
     }
 
     public void broadcastToClan(int clanId, String message) {
-        // TODO: Implementar a lógica de broadcast
+        // Este método pode ser removido ou atualizado para usar o novo sistema.
+        // Por enquanto, vamos deixá-lo vazio para não causar erros.
     }
 
     public boolean isValidClanName(String name) {
@@ -57,24 +113,16 @@ public class ClanManager {
 
     public boolean isValidClanTag(String tag) {
         if (tag == null || tag.trim().isEmpty()) return false;
-
-        // Remove cores para validar apenas o conteúdo
         String cleanTag = ChatColor.stripColor(translateHexColors(tag));
-
-        // Verificar se o conteúdo limpo está dentro dos limites mais flexíveis
         if (!TAG_CLEAN_PATTERN.matcher(cleanTag).matches()) {
             return false;
         }
-
-        // Verificar se a tag expandida não é excessivamente longa (limite de 1000 caracteres)
         String expandedTag = translateColors(tag);
         return expandedTag.length() <= 1000;
     }
 
     public String translateHexColors(String message) {
         if (message == null) return null;
-
-        // Traduzir cores hexadecimais &#RRGGBB para formato Bukkit
         return HEX_PATTERN.matcher(message).replaceAll(match -> {
             String hex = match.group().substring(2);
             StringBuilder magic = new StringBuilder("§x");
@@ -87,26 +135,17 @@ public class ClanManager {
 
     public String translateColors(String message) {
         if (message == null) return null;
-
-        // Primeiro traduzir cores hexadecimais &#RRGGBB
         String hexTranslated = HEX_PATTERN.matcher(message).replaceAll(match -> {
-            String hex = match.group().substring(2); // Remove &#
+            String hex = match.group().substring(2);
             StringBuilder magic = new StringBuilder("§x");
             for (char c : hex.toCharArray()) {
                 magic.append("§").append(Character.toLowerCase(c));
             }
             return magic.toString();
         });
-
-        // Depois traduzir cores normais, mas preservar códigos hex já processados
         return ChatColor.translateAlternateColorCodes('&', hexTranslated);
     }
 
-    /**
-     * Converte underscores em espaços para melhor legibilidade
-     * @param name Nome com possíveis underscores
-     * @return Nome com espaços no lugar dos underscores
-     */
     public String formatDisplayName(String name) {
         if (name == null) return null;
         return name.replace("_", " ");
@@ -162,108 +201,58 @@ public class ClanManager {
         return ChatColor.stripColor(translateHexColors(tag));
     }
 
-    /**
-     * Obtém a tag do clã com colchetes coloridos baseado no role do jogador
-     */
     public String getPlayerClanTagWithLabels(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
-        if (clan == null) {
-            return "";
-        }
-
+        if (clan == null) return "";
         String role = getPlayerRole(playerUuid);
         String[] brackets = getBracketsForRole(role);
         String translatedTag = translateColors(clan.getTag());
-
         return brackets[0] + translatedTag + brackets[1];
     }
 
-    /**
-     * Obtém a tag do clã em formato small caps
-     */
     public String getPlayerClanTagSmall(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
-        if (clan == null) {
-            return "";
-        }
-
+        if (clan == null) return "";
         String translatedTag = translateColors(clan.getTag());
         return SmallTextConverter.toSmallCapsPreservingColors(translatedTag);
     }
 
-    /**
-     * Obtém a tag do clã em formato small caps com colchetes coloridos
-     */
     public String getPlayerClanTagSmallWithLabels(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
-        if (clan == null) {
-            return "";
-        }
-
+        if (clan == null) return "";
         String role = getPlayerRole(playerUuid);
         String[] brackets = getBracketsForRole(role);
         String translatedTag = translateColors(clan.getTag());
         String smallTag = SmallTextConverter.toSmallCapsPreservingColors(translatedTag);
-
         return brackets[0] + smallTag + brackets[1];
     }
 
-    /**
-     * Obtém o role do jogador no clã
-     * Retorna apenas LEADER (para owner e admin) ou MEMBER
-     */
     private String getPlayerRole(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
-        if (clan == null) {
-            return "MEMBER";
-        }
-
-        // Se for o owner, retorna LEADER
-        if (clan.getOwnerUuid().equals(playerUuid)) {
-            return "LEADER";
-        }
-
-        // Para outros roles, consulta o banco
+        if (clan == null) return "MEMBER";
+        if (clan.getOwnerUuid().equals(playerUuid)) return "LEADER";
         String dbRole = plugin.getDatabaseManager().getMemberRole(clan.getId(), playerUuid);
-
-        // Se for ADMIN, trata como LEADER para as cores
-        if ("ADMIN".equalsIgnoreCase(dbRole)) {
-            return "LEADER";
-        }
-
-        // Qualquer outro role é tratado como MEMBER
+        if ("ADMIN".equalsIgnoreCase(dbRole)) return "LEADER";
         return "MEMBER";
     }
 
-    /**
-     * Obtém os colchetes coloridos baseado no role
-     * Apenas LEADER (líder/admin) e MEMBER (membro)
-     */
     private String[] getBracketsForRole(String role) {
         String leftBracket, rightBracket;
-
         switch (role != null ? role.toUpperCase() : "MEMBER") {
             case "LEADER":
                 leftBracket = plugin.getConfig().getString("settings.placeholder-colors.leader.left-bracket", "&4[");
                 rightBracket = plugin.getConfig().getString("settings.placeholder-colors.leader.right-bracket", "&4]");
                 break;
-            case "MEMBER":
             default:
                 leftBracket = plugin.getConfig().getString("settings.placeholder-colors.member.left-bracket", "&7[");
                 rightBracket = plugin.getConfig().getString("settings.placeholder-colors.member.right-bracket", "&7]");
                 break;
         }
-
-        // Se não conseguir ler do config, usa cores padrão
         if (leftBracket == null || rightBracket == null) {
             leftBracket = plugin.getConfig().getString("settings.placeholder-colors.default.left-bracket", "&8[");
             rightBracket = plugin.getConfig().getString("settings.placeholder-colors.default.right-bracket", "&8]");
         }
-
-        return new String[]{
-                translateColors(leftBracket),
-                translateColors(rightBracket)
-        };
+        return new String[]{translateColors(leftBracket), translateColors(rightBracket)};
     }
 
     public void debugColorTranslation(String input) {

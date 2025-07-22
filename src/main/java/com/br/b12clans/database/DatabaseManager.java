@@ -10,6 +10,7 @@ import java.sql.*;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
 public class DatabaseManager {
@@ -603,6 +604,29 @@ public class DatabaseManager {
         }
         return new int[]{0, 0};
     }
+    // NOVO MÉTODO ASYNC
+    public CompletableFuture<int[]> getPlayerKDRAsync(UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            // A lógica de busca no banco de dados continua a mesma
+            String sql = "SELECT kills, deaths FROM b12_clan_members WHERE player_uuid = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                ps.setString(1, playerUuid.toString());
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return new int[]{rs.getInt("kills"), rs.getInt("deaths")};
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar KDR do jogador " + playerUuid, e);
+                // Lança uma exceção para que o .exceptionally() possa capturá-la
+                throw new RuntimeException(e);
+            }
+            return new int[]{0, 0}; // Retorno padrão se o jogador não for encontrado
+        }, plugin.getThreadPool()); // Usaremos um pool de threads para rodar isso
+    }
 
     // ========================================
     // MÉTODOS PARA CLÃS ESTENDIDOS
@@ -976,5 +1000,63 @@ public class DatabaseManager {
             plugin.getLogger().log(Level.SEVERE, "Erro ao retirar do banco do clã " + clanId, e);
             return false;
         }
+    }
+    // NOVO
+    public CompletableFuture<String> getMemberRoleAsync(int clanId, UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> getMemberRole(clanId, playerUuid), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Double> getClanBankBalanceAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> getClanBankBalance(clanId), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> depositToClanBankAsync(int clanId, double amount) {
+        return CompletableFuture.supplyAsync(() -> depositToClanBank(clanId, amount), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> withdrawFromClanBankAsync(int clanId, double amount) {
+        return CompletableFuture.supplyAsync(() -> withdrawFromClanBank(clanId, amount), plugin.getThreadPool());
+    }
+    public CompletableFuture<Boolean> addClanMemberAsync(int clanId, UUID playerUuid, String playerName) {
+        return CompletableFuture.supplyAsync(() -> addClanMember(clanId, playerUuid, playerName), plugin.getThreadPool());
+    }
+    // NOVO
+    public CompletableFuture<Boolean> removeClanMemberAsync(int clanId, UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> removeClanMember(clanId, playerUuid), plugin.getThreadPool());
+    }
+    // NOVO
+    public CompletableFuture<Boolean> updateMemberRoleAsync(int clanId, UUID playerUuid, String newRole) {
+        return CompletableFuture.supplyAsync(() -> updateMemberRole(clanId, playerUuid, newRole), plugin.getThreadPool());
+    }
+    // NOVO
+    public CompletableFuture<Object[]> getClanHomeAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> getClanHome(clanId), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> setClanHomeAsync(int clanId, String world, double x, double y, double z, float yaw, float pitch) {
+        return CompletableFuture.supplyAsync(() -> setClanHome(clanId, world, x, y, z, yaw, pitch), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> clearClanHomeAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> clearClanHome(clanId), plugin.getThreadPool());
+    }
+    // NOVO
+    public CompletableFuture<Clan> getClanByTagAsync(String tag) {
+        return CompletableFuture.supplyAsync(() -> getClanByTag(tag), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> updateClanTagAsync(int clanId, String newTag) {
+        return CompletableFuture.supplyAsync(() -> updateClanTag(clanId, newTag), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> setClanFeeAsync(int clanId, double amount) {
+        return CompletableFuture.supplyAsync(() -> setClanFee(clanId, amount), plugin.getThreadPool());
     }
 }

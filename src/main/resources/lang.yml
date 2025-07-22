@@ -169,6 +169,10 @@ messages:
   modtag-no-permission: "&cApenas Líderes podem modificar a tag do clã."
   modtag-success: "&aTag do clã alterada de %old_tag% &apara %new_tag%&a!"
 
+  # --- Comando /clan ver ---
+  view-tag-usage: "&cUso: /clan ver <tag para visualizar>"
+  view-tag-result: "&aA tag renderizada fica assim: %tag%"
+
   # Comando /clan ally
   ally-usage: "&cUso: /clan ally <add|remove> <tag_do_clã>"
   ally-no-permission: "&cVocê não tem permissão para gerenciar alianças."

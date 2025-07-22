@@ -1,0 +1,278 @@
+# ========================================
+#           B12CLANS - LANG.YML
+# ========================================
+# Use & para códigos de cor.
+# Use %placeholder% para variáveis.
+# ========================================
+
+prefix: "&8[&6B12Clans&8]&r "
+
+messages:
+  # --- Mensagens Gerais ---
+  no-permission: "&cVocê não tem permissão para usar este comando!"
+  player-only: "&cApenas jogadores podem usar este comando!"
+  generic-error: "&cOcorreu um erro inesperado. Por favor, tente novamente."
+  player-not-found: "&cJogador '%player_name%' não encontrado ou não está online."
+  clan-not-found: "&cClã com a tag '%tag%' não foi encontrado."
+
+  # --- Comando /clan criar ---
+  create-usage: "&cUso: /clan criar <nome> <tag>"
+  create-example: "&7Exemplo: /clan criar MeuClan &e[MC]"
+  create-tag-test-tip: "&7Dica: Use /clan ver <tag> para testar sua tag primeiro!"
+  clan-created-success: "&a&lCLÃ CRIADO COM SUCESSO!" # Sem prefixo
+  clan-created-name: "&7Nome: &f%name%"
+  clan-created-tag: "&7Tag: %tag%"
+  clan-created-leader: "&7Líder: &f%leader%"
+  clan-creation-failed: "&cErro ao criar o clã! Verifique o console."
+  already-in-clan: "&cVocê já faz parte do clã: &f%clan_name%"
+  clan-exists: "&cJá existe um clã com esse nome ou tag!"
+  invalid-name: "&cNome inválido! Use apenas letras, números e _ (2-32 caracteres)."
+  invalid-tag-rules: "&cTag inválida! Use apenas letras, números e símbolos básicos (1-16 caracteres sem cores)."
+  invalid-tag-symbols: "&7Símbolos permitidos: [ ] ( ) - _"
+  tag-too-long: "&cTag muito longa! Máximo: 1000 caracteres com cores."
+  tag-already-exists: "&cEssa tag já está sendo usada por outro clã!"
+  checking-availability: "&eVerificando disponibilidade..."
+
+  # --- Comando /clan info ---
+  no-clan: "&cVocê não faz parte de nenhum clã."
+  info-header: "&6&l=== INFORMAÇÕES DO CLÃ ==="
+  info-name: "&eNome: &f%name%"
+  info-tag: "&eTag: %tag%"
+  info-clean-tag: "&eTag Limpa: &f%clean_tag%"
+  info-expanded-size: "&eTamanho (com cores): &f%length% caracteres"
+  info-created-at: "&eCriado em: &f%date%"
+  info-footer: "&6&l=========================="
+
+  # --- Comando /clan ver ---
+  ver-usage: "&cUso: /clan ver <tag>"
+  ver-header: "&6&l=== VISUALIZAR TAG ==="
+  ver-original-tag: "&eTag Original: &f%tag%"
+  ver-rendered-tag: "&eTag Renderizada: %tag_rendered%"
+  ver-valid: "&a✓ Tag válida!"
+  ver-invalid: "&c✗ Tag inválida!"
+  ver-invalid-reason-long: "&c  Motivo: Muito longa (máximo: 1000 caracteres)."
+  ver-invalid-reason-content: "&c  Motivo: Conteúdo inválido (1-16 caracteres limpos)."
+  ver-footer: "&6&l====================="
+
+  # --- Comandos de Gestão de Membros ---
+  invite-usage: "&cUso: /clan convidar <jogador>"
+  invite-no-permission: "&cVocê não tem permissão para convidar membros."
+  cannot-invite-self: "&cVocê não pode convidar a si mesmo!"
+  target-already-in-clan: "&cO jogador %player_name% já faz parte de um clã."
+  invite-sent: "&aVocê convidou %player_name% para se juntar ao seu clã."
+  invite-received: "&eVocê foi convidado para se juntar ao clã &6%clan_name%&e! Use &a/clan aceitar %clan_tag% &epara entrar."
+
+  accept-usage: "&cUso: /clan aceitar <tag_do_cla>"
+  deny-usage: "&cUso: /clan negar <tag_do_cla>"
+  no-pending-invite: "&cVocê não tem um convite pendente deste clã."
+  invite-accepted: "&aVocê entrou para o clã &6%clan_name%&a!"
+  invite-denied: "&aVocê recusou o convite do clã &6%clan_name%&a."
+  clan-full: "&cO clã %clan_name% está cheio e não pode aceitar novos membros."
+  player-joined-clan-broadcast: "&eO jogador &6%player_name% &eentrou para o clã!"
+
+  # --- Comandos de Saída e Expulsão ---
+  leave-success: "&eVocê saiu do clã &6%clan_name%&e."
+  cannot-leave-as-owner: "&cVocê é o dono do clã! Você não pode sair. Use /clan deletar para apagar o clã."
+  kick-usage: "&cUso: /clan expulsar <jogador>"
+  kick-no-permission: "&cVocê não tem permissão para expulsar membros."
+  cannot-kick-self: "&cVocê não pode se expulsar."
+  cannot-kick-owner: "&cVocê não pode expulsar o dono do clã!"
+  player-not-in-your-clan: "&cO jogador %player_name% não faz parte do seu clã."
+  kick-success: "&aVocê expulsou %player_name% do clã."
+  you-were-kicked: "&cVocê foi expulso do clã &6%clan_name%&c."
+
+  # --- Comando /clan deletar ---
+  delete-confirm: "&cAVISO: Esta ação é irreversível! Para confirmar, use /clan deletar confirm."
+  not-owner: "&cVocê não é o dono do clã para poder deletá-lo."
+  delete-success: "&aO clã %clan_name% foi deletado com sucesso."
+
+  # --- Comandos de Promoção e Rebaixamento ---
+  promote-usage: "&cUso: /clan promover <jogador>"
+  demote-usage: "&cUso: /clan rebaixar <jogador>"
+  no-permission-to-manage-roles: "&cVocê precisa ser Dono do clã para gerir cargos."
+  player-not-member: "&cO jogador %player_name% não é membro do seu clã."
+  cannot-manage-self: "&cVocê não pode alterar o seu próprio cargo."
+  cannot-manage-owner: "&cVocê não pode alterar o cargo do Dono do clã."
+  player-already-max-role: "&cO jogador %player_name% já tem o cargo máximo."
+  player-already-min-role: "&cO jogador %player_name% já tem o cargo mínimo."
+  promote-success: "&aVocê promoveu %player_name% para %role% do clã."
+  demote-success: "&aVocê rebaixou %player_name% para %role% do clã."
+  got-promoted: "&aVocê foi promovido para %role% no clã &6%clan_name%&a!"
+  got-demoted: "&cVocê foi rebaixado para %role% no clã &6%clan_name%&c."
+
+  # --- Comando /clan titulo ---
+  title-usage: "&cUso: /clan titulo <jogador> <titulo...>"
+  title-cleared: "&aVocê removeu o título de %player_name%."
+  title-set: "&aVocê definiu o título de %player_name% para: %title%"
+  no-permission-to-set-title: "&cVocê precisa ser Dono, Vice-líder ou Admin do clã para definir títulos."
+  title-too-long: "&cO título é muito longo! (Máximo: 50 caracteres)"
+
+  # --- Sistema de Chat ---
+  clan-chat-usage: "&cUso: /. <mensagem> ou /. [join|leave|mute]"
+  clan-chat-joined: "&aVocê entrou no chat do clã! Suas mensagens agora serão enviadas apenas para membros do clã."
+  clan-chat-left: "&eVocê saiu do chat do clã. Suas mensagens voltarão ao chat global."
+  clan-chat-muted: "&cVocê silenciou o chat do clã. Não receberá mais mensagens."
+  clan-chat-unmuted: "&aVocê reativou o chat do clã. Voltará a receber mensagens."
+
+  ally-chat-usage: "&cUso: /ally <mensagem> ou /ally [join|leave|mute]"
+  ally-chat-joined: "&aVocê entrou no chat dos aliados!"
+  ally-chat-left: "&eVocê saiu do chat dos aliados."
+  ally-chat-muted: "&cVocê silenciou o chat dos aliados."
+  ally-chat-unmuted: "&aVocê reativou o chat dos aliados."
+
+  # --- Integração Discord ---
+  discord-disabled: "&cA integração com Discord está desabilitada."
+  discord-verification-code: "&a&lCÓDIGO DE VERIFICAÇÃO: &f&l%code%"
+  discord-verification-instructions: "&7Use o comando &f/validar %code% &7no Discord para vincular sua conta."
+  discord-verification-instructions-slash: "&7Use o slash command &f/validar &7no Discord e digite o código: &f%code%"
+  discord-already-verified: "&aVocê já tem sua conta verificada no Discord!"
+  discord-verified: "&aVocê está verificado no Discord!"
+  discord-not-verified: "&cVocê não está verificado no Discord. Use /discord vincular"
+  discord-unlinked: "&aVocê desvinculou sua conta do Discord com sucesso!"
+  discord-unlink-failed: "&cErro ao desvincular conta do Discord!"
+
+  discord-help-header: "&6&l=== DISCORD - AJUDA ==="
+  discord-help-vincular: "&e/discord vincular &7- Gerar código de verificação"
+  discord-help-desvincular: "&e/discord desvincular &7- Desvincular conta do Discord"
+  discord-help-status: "&e/discord status &7- Ver status da verificação"
+  discord-help-slash: "&7Use &f/validar <código> &7como slash command no Discord"
+  discord-help-permanent: "&a&lIMPORTANTE: &7Sua conta fica vinculada permanentemente!"
+  discord-help-footer: "&6&l======================"
+
+  # --- Novos Comandos por Hierarquia ---
+
+  # Comando /clan description
+  description-not-set: "&7O clã não possui uma descrição definida."
+  description-current: "&eDescrição atual: &f%description%"
+  description-no-permission: "&cApenas Vice-líderes e Líderes podem alterar a descrição."
+  description-too-long: "&cDescrição muito longa! (Máximo: 200 caracteres)"
+  description-updated: "&aDescrição do clã atualizada: &f%description%"
+
+  # Comando /clan home
+  home-not-set: "&cO clã não possui um home definido."
+  home-world-not-found: "&cO mundo do home do clã não foi encontrado!"
+  home-teleported: "&aVocê foi teleportado para o home do clã!"
+  home-usage: "&cUso: /clan home [set|clear]"
+  home-set-no-permission: "&cApenas Líderes podem definir o home do clã."
+  home-set-success: "&aHome do clã definido na sua localização atual!"
+  home-clear-no-permission: "&cApenas Líderes podem limpar o home do clã."
+  home-cleared: "&aHome do clã foi removido."
+
+  # Comando /clan kdr
+  kdr-header: "&6&l=== SEU KDR NO CLÃ ==="
+  kdr-ratio: "&e🔫 Seu KDR: &f%kdr%"
+  kdr-details: "&7(Você tem &a%kills% kills &7e &c%deaths% mortes&7)"
+  kdr-footer: "&6&l==================="
+
+  # Comando /clan modtag
+  modtag-usage: "&cUso: /clan modtag <nova_tag>"
+  modtag-no-permission: "&cApenas Líderes podem modificar a tag do clã."
+  modtag-success: "&aTag do clã alterada de %old_tag% &apara %new_tag%&a!"
+
+  # --- Comando /clan ver ---
+  view-tag-usage: "&cUso: /clan ver <tag para visualizar>"
+  view-tag-result: "&aA tag renderizada fica assim: %tag%"
+
+  # Comando /clan ally
+  ally-usage: "&cUso: /clan ally <add|remove> <tag_do_clã>"
+  ally-no-permission: "&cVocê não tem permissão para gerenciar alianças."
+  cannot-ally-self: "&cVocê não pode fazer aliança com seu próprio clã!"
+  already-allies: "&cVocê já é aliado do clã %clan_name%."
+  not-allies: "&cVocê não é aliado do clã %clan_name%."
+  ally-added: "&aAliança formada com o clã %clan_name%!"
+  ally-removed: "&eAliança com o clã %clan_name% foi desfeita."
+
+  # Comando /clan rival
+  rival-usage: "&cUso: /clan rival <add|remove> <tag_do_clã>"
+  rival-no-permission: "&cVocê não tem permissão para gerenciar rivalidades."
+  cannot-rival-self: "&cVocê não pode rivalizar com seu próprio clã!"
+  already-rivals: "&cVocê já é rival do clã %clan_name%."
+  not-rivals: "&cVocê não é rival do clã %clan_name%."
+  rival-added: "&cRivalidade declarada com o clã %clan_name%!"
+  rival-removed: "&eRivalidade com o clã %clan_name% foi encerrada."
+
+  # Comando /clan fee
+  fee-usage: "&cUso: /clan fee set <quantia>"
+  fee-no-permission: "&cApenas Líderes podem definir taxas do clã."
+  fee-invalid-amount: "&cA quantia deve ser um número positivo."
+  fee-invalid-number: "&cQuantia inválida! Use apenas números."
+  fee-set-success: "&aTaxa do clã definida para: &f$%amount%"
+
+  # Comando /clan setbanner
+  setbanner-no-permission: "&cApenas Líderes podem definir o banner do clã."
+  setbanner-not-implemented: "&eEste comando ainda não foi implementado. Em breve!"
+
+  # --- Sistema Bancário do Clã ---
+  economy-not-available: "&cSistema de economia não disponível! Instale Vault e um plugin de economia."
+
+  # Comandos bancários em inglês
+  bank-usage: "&cUso: /clan bank <status|deposit|withdraw> [quantia|all]"
+  bank-status-header: "&6&l=== BANCO DO CLÃ ==="
+  bank-status-balance: "&eSaldo do banco: &f%balance%"
+  bank-status-footer: "&6&l================="
+
+  bank-deposit-usage: "&cUso: /clan bank deposit <quantia|all>"
+  bank-deposit-success: "&aVocê depositou %amount% no banco do clã! Novo saldo: %balance%"
+  bank-no-money-to-deposit: "&cVocê não tem dinheiro para depositar!"
+
+  bank-withdraw-usage: "&cUso: /clan bank withdraw <quantia|all>"
+  bank-withdraw-success: "&aVocê sacou %amount% do banco do clã! Novo saldo: %balance%"
+  bank-withdraw-no-permission: "&cApenas Líderes, Vice-líderes e Admins podem sacar do banco do clã!"
+  bank-no-money-to-withdraw: "&cO banco do clã não tem dinheiro para sacar!"
+
+  bank-invalid-amount: "&cQuantia deve ser maior que zero!"
+  bank-invalid-number: "&cQuantia inválida! Use apenas números."
+  bank-insufficient-funds: "&cVocê não tem %amount% para depositar!"
+  bank-insufficient-clan-funds: "&cO banco do clã não tem %amount%! Saldo atual: %balance%"
+  bank-economy-error: "&cErro na transação econômica! Tente novamente."
+  bank-database-error: "&cErro no banco de dados! Tente novamente."
+
+  # Comandos bancários em português
+  banco-usage: "&cUso: /clan banco <status|depositar|sacar> [quantia|tudo]"
+
+  # --- Menu de Ajuda Organizado por Hierarquia ---
+  help-header: "&6&l=== B12CLANS - AJUDA ==="
+  help-section-member: "&e&l👥 COMANDOS DE MEMBROS:"
+  help-section-vice-leader: "&a&l🛡️ COMANDOS DE VICE-LÍDERES/ADMINS:"
+  help-section-leader: "&c&l🔰 COMANDOS DE LÍDERES:"
+
+  # Comandos básicos
+  help-line-create: "&e/clan criar <nome> <tag> &7- Criar um novo clã."
+  help-line-info: "&e/clan info &7- Ver informações do seu clã."
+  help-line-ver: "&e/clan ver <tag> &7- Visualizar como uma tag ficará."
+  help-line-accept: "&e/clan aceitar <tag> &7- Aceitar um convite de clã."
+  help-line-deny: "&e/clan negar <tag> &7- Negar um convite de clã."
+
+  # Comandos de membros
+  help-line-home: "&e/clan home &7- Teleportar para o home do clã."
+  help-line-description-view: "&e/clan description &7- Ver descrição do clã."
+  help-line-kdr: "&e/clan kdr &7- Ver seu KDR no clã."
+  help-line-sair: "&e/clan sair &7- Sair do clã atual."
+  help-line-bank-status: "&e/clan bank status &7- Ver saldo do banco do clã."
+  help-line-banco-status: "&e/clan banco status &7- Ver saldo do banco do clã."
+
+  # Comandos de vice-líderes/admins
+  help-line-invite: "&e/clan convidar <jogador> &7- Convidar um jogador."
+  help-line-expulsar: "&e/clan expulsar <jogador> &7- Expulsar um membro."
+  help-line-titulo: "&e/clan titulo <jogador> [titulo] &7- Definir título personalizado."
+  help-line-description-set: "&e/clan description <texto> &7- Alterar descrição do clã."
+  help-line-home-set: "&e/clan home set &7- Definir home do clã."
+  help-line-ally: "&e/clan ally <add|remove> <tag> &7- Gerenciar alianças."
+  help-line-rival: "&e/clan rival <add|remove> <tag> &7- Gerenciar rivalidades."
+  help-line-bank-deposit: "&e/clan bank deposit <quantia> &7- Depositar no banco."
+  help-line-bank-withdraw: "&e/clan bank withdraw <quantia> &7- Sacar do banco."
+  help-line-banco-deposit: "&e/clan banco depositar <quantia> &7- Depositar no banco."
+  help-line-banco-withdraw: "&e/clan banco sacar <quantia> &7- Sacar do banco."
+
+  # Comandos de líderes
+  help-line-promover: "&e/clan promover <jogador> &7- Promover membro."
+  help-line-rebaixar: "&e/clan rebaixar <jogador> &7- Rebaixar membro."
+  help-line-deletar: "&e/clan deletar confirm &7- Deletar o clã (irreversível)."
+  help-line-modtag: "&e/clan modtag <nova_tag> &7- Alterar tag do clã."
+  help-line-home-clear: "&e/clan home clear &7- Remover home do clã."
+  help-line-fee: "&e/clan fee set <quantia> &7- Definir taxa do clã."
+  help-line-setbanner: "&e/clan setbanner &7- Definir banner do clã."
+
+  help-footer: "&6&l======================="
+
+# ========================================
