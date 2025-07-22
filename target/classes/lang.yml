@@ -181,6 +181,12 @@ messages:
   not-allies: "&cVocê não é aliado do clã %clan_name%."
   ally-added: "&aAliança formada com o clã %clan_name%!"
   ally-removed: "&eAliança com o clã %clan_name% foi desfeita."
+  ally-usage-new: "&cUso: /clan ally <request|accept|deny|remove> <tag_do_clã>"
+  ally-request-sent: "&aPedido de aliança enviado para o clã %clan_name%!"
+  ally-request-received: "&eO clã %clan_name% enviou um pedido de aliança! Use /clan ally accept <tag> para aceitar."
+  no-pending-ally-request: "&cNão há pedidos de aliança pendentes deste clã."
+  ally-request-accepted: "&aVocê aceitou o pedido de aliança do clã %clan_name%!"
+  ally-request-denied: "&eVocê negou o pedido de aliança."
 
   # Comando /clan rival
   rival-usage: "&cUso: /clan rival <add|remove> <tag_do_clã>"

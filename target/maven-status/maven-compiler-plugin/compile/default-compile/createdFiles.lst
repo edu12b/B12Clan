@@ -7,14 +7,12 @@ com/br/b12clans/commands/ClanChatCommand.class
 com/br/b12clans/utils/SmallTextConverter.class
 com/br/b12clans/commands/subcommands/DescriptionCommand.class
 com/br/b12clans/utils/MessagesManager.class
-com/br/b12clans/commands/subcommands/VerCommand.class
 com/br/b12clans/database/DatabaseManager.class
 com/br/b12clans/commands/subcommands/TituloCommand.class
 com/br/b12clans/listeners/KDRListener.class
 com/br/b12clans/commands/AllyChatCommand.class
 com/br/b12clans/placeholders/ClanPlaceholder.class
 com/br/b12clans/listeners/ChatListener.class
-com/br/b12clans/commands/subcommands/CriarCommand.class
 com/br/b12clans/managers/ClanManager.class
 com/br/b12clans/commands/subcommands/DeletarCommand.class
 com/br/b12clans/commands/subcommands/SairCommand.class

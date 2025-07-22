@@ -1,3 +1,4 @@
+// ARQUIVO: src/main/java/com/br/b12clans/chat/ClanChatManager.java
 package com.br.b12clans.chat;
 
 import com.br.b12clans.Main;
@@ -6,6 +7,8 @@ import com.br.b12clans.models.Clan;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
@@ -59,8 +62,7 @@ public class ClanChatManager {
         }
 
         String formattedMessage = formatClanMessage(sender, message);
-        
-        // Enviar para todos os membros online do clã
+
         for (Player player : Bukkit.getOnlinePlayers()) {
             Clan playerClan = plugin.getClanManager().getPlayerClan(player.getUniqueId());
             if (playerClan != null && playerClan.getId() == senderClan.getId()) {
@@ -70,12 +72,12 @@ public class ClanChatManager {
             }
         }
 
-        // Enviar para Discord se habilitado
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
             plugin.getDiscordManager().sendClanMessage(senderClan, sender.getName(), message);
         }
     }
 
+    // ##### MÉTODO CORRIGIDO #####
     public void sendAllyMessage(Player sender, String message) {
         Clan senderClan = plugin.getClanManager().getPlayerClan(sender.getUniqueId());
         if (senderClan == null) {
@@ -84,40 +86,47 @@ public class ClanChatManager {
         }
 
         String formattedMessage = formatAllyMessage(sender, message);
-        
-        // TODO: Implementar sistema de alianças
-        // Por enquanto, apenas envia para o próprio clã
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            Clan playerClan = plugin.getClanManager().getPlayerClan(player.getUniqueId());
-            if (playerClan != null && playerClan.getId() == senderClan.getId()) {
-                if (!isMuted(player.getUniqueId())) {
-                    player.sendMessage(formattedMessage);
+
+        // Usamos um Set para não ter IDs duplicados
+        Set<Integer> recipientClanIds = new HashSet<>();
+        // Adiciona o próprio clã
+        recipientClanIds.add(senderClan.getId());
+
+        // Busca a lista de aliados no banco de dados e adiciona ao Set
+        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
+            List<Integer> allyIds = plugin.getDatabaseManager().getAllAllyIds(senderClan.getId());
+            recipientClanIds.addAll(allyIds);
+
+            // Volta para a thread principal para enviar as mensagens
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                for (Player player : Bukkit.getOnlinePlayers()) {
+                    Clan playerClan = plugin.getClanManager().getPlayerClan(player.getUniqueId());
+                    // Verifica se o clã do jogador está na nossa lista de destinatários
+                    if (playerClan != null && recipientClanIds.contains(playerClan.getId())) {
+                        if (!isMuted(player.getUniqueId())) {
+                            player.sendMessage(formattedMessage);
+                        }
+                    }
                 }
-            }
-        }
+            });
+        });
     }
 
     private String formatClanMessage(Player sender, String message) {
-        String format = plugin.getConfig().getString("chat.clan-format", "&8[&6CLÃN&8] &7%player%&8: &f%message%");
-        Clan clan = plugin.getClanManager().getPlayerClan(sender.getUniqueId());
-        String clanTag = clan != null ? plugin.getClanManager().translateColors(clan.getTag()) : "";
-        
-        return plugin.getClanManager().translateColors(format
+        String format = plugin.getConfig().getString("chat.clan-format", "&8[&6CLÃ&8] &7%player%&8: &f%message%");
+        return plugin.getMessagesManager().translateColors(format
                 .replace("%player%", sender.getName())
-                .replace("%clan_tag%", clanTag)
-                .replace("%clan_name%", clan != null ? clan.getName() : "")
                 .replace("%message%", message));
     }
 
     private String formatAllyMessage(Player sender, String message) {
         String format = plugin.getConfig().getString("chat.ally-format", "&8[&aALIADO&8] &7%player%&8: &f%message%");
         Clan clan = plugin.getClanManager().getPlayerClan(sender.getUniqueId());
-        String clanTag = clan != null ? plugin.getClanManager().translateColors(clan.getTag()) : "";
-        
-        return plugin.getClanManager().translateColors(format
+        String clanTag = clan != null ? plugin.getClanManager().getCleanTag(clan.getTag()) : "";
+
+        return plugin.getMessagesManager().translateColors(format
                 .replace("%player%", sender.getName())
                 .replace("%clan_tag%", clanTag)
-                .replace("%clan_name%", clan != null ? clan.getName() : "")
                 .replace("%message%", message));
     }
 

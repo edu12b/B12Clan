@@ -7,9 +7,7 @@ import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.configuration.file.FileConfiguration;
 
 import java.sql.*;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.UUID;
+import java.util.*;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 
@@ -1001,6 +999,81 @@ public class DatabaseManager {
             return false;
         }
     }
+    // NOVO MÉTODO
+    public List<Integer> getAllAllyIds(int clanId) {
+        List<Integer> allyIds = new ArrayList<>();
+        String sql = "SELECT ally_clan_id FROM b12_clan_allies WHERE clan_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setInt(1, clanId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    allyIds.add(rs.getInt("ally_clan_id"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar aliados do clã " + clanId, e);
+        }
+        return allyIds;
+    }
+    // NOVO
+    public CompletableFuture<List<String>> getAllClanTagsAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            List<String> tags = new ArrayList<>();
+            String sql = "SELECT tag FROM b12_clans";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    tags.add(rs.getString("tag"));
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar todas as tags de clãs", e);
+            }
+            return tags;
+        }, plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<List<String>> getAllAllyTagsAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<String> tags = new ArrayList<>();
+            String sql = "SELECT c.tag FROM b12_clans c JOIN b12_clan_allies a ON c.id = a.ally_clan_id WHERE a.clan_id = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, clanId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        tags.add(rs.getString("tag"));
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar tags de aliados", e);
+            }
+            return tags;
+        }, plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<List<String>> getAllRivalTagsAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> {
+            List<String> tags = new ArrayList<>();
+            String sql = "SELECT c.tag FROM b12_clans c JOIN b12_clan_rivals r ON c.id = r.rival_clan_id WHERE r.clan_id = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, clanId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        tags.add(rs.getString("tag"));
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar tags de rivais", e);
+            }
+            return tags;
+        }, plugin.getThreadPool());
+    }
     // NOVO
     public CompletableFuture<String> getMemberRoleAsync(int clanId, UUID playerUuid) {
         return CompletableFuture.supplyAsync(() -> getMemberRole(clanId, playerUuid), plugin.getThreadPool());
@@ -1058,5 +1131,24 @@ public class DatabaseManager {
     // NOVO
     public CompletableFuture<Boolean> setClanFeeAsync(int clanId, double amount) {
         return CompletableFuture.supplyAsync(() -> setClanFee(clanId, amount), plugin.getThreadPool());
+    }
+    // NOVO
+    public CompletableFuture<Boolean> addAllyAsync(int clanId, int allyClanId) {
+        return CompletableFuture.supplyAsync(() -> addAlly(clanId, allyClanId), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> removeAllyAsync(int clanId, int allyClanId) {
+        return CompletableFuture.supplyAsync(() -> removeAlly(clanId, allyClanId), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> addRivalAsync(int clanId, int rivalClanId) {
+        return CompletableFuture.supplyAsync(() -> addRival(clanId, rivalClanId), plugin.getThreadPool());
+    }
+
+    // NOVO
+    public CompletableFuture<Boolean> removeRivalAsync(int clanId, int rivalClanId) {
+        return CompletableFuture.supplyAsync(() -> removeRival(clanId, rivalClanId), plugin.getThreadPool());
     }
 }

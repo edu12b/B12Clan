@@ -20,20 +20,35 @@ import java.util.regex.Pattern;
 public class ClanManager {
 
     private final Main plugin;
-    private final MessagesManager messages; // <-- LINHA ADICIONADA
+    private final MessagesManager messages;
     private final Map<UUID, Clan> playerClans;
     private final Map<UUID, Integer> pendingInvites;
+    private final Map<Integer, Integer> pendingAllianceRequests; // clanId_alvo -> clanId_autor
 
-    private static final Pattern HEX_PATTERN = Pattern.compile("&#[a-fA-F0-9]{6}");
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_&]{1,16}$");
 
     public ClanManager(Main plugin) {
         this.plugin = plugin;
-        this.messages = plugin.getMessagesManager(); // <-- LINHA ADICIONADA
+        this.messages = plugin.getMessagesManager();
         this.playerClans = new ConcurrentHashMap<>();
         this.pendingInvites = new ConcurrentHashMap<>();
+        this.pendingAllianceRequests = new ConcurrentHashMap<>(); // <-- INICIALIZAÇÃO ADICIONADA
     }
+
+    // ##### NOVOS MÉTODOS PARA PEDIDOS DE ALIANÇA #####
+    public void addAllianceRequest(int targetClanId, int sourceClanId) {
+        pendingAllianceRequests.put(targetClanId, sourceClanId);
+    }
+
+    public Integer getPendingAllianceRequest(int targetClanId) {
+        return pendingAllianceRequests.get(targetClanId);
+    }
+
+    public void removeAllianceRequest(int targetClanId) {
+        pendingAllianceRequests.remove(targetClanId);
+    }
+    // #################################################
 
     public void broadcastToClan(Clan clan, String messageKey, String... placeholders) {
         if (clan == null) return;
@@ -60,36 +75,6 @@ public class ClanManager {
         pendingInvites.put(invitedPlayer, clanId);
     }
 
-    // Método corrigido para buscar convite por nome do clã
-    public Integer getInvite(UUID playerUUID, String clanName) {
-        Integer clanId = pendingInvites.get(playerUUID);
-        if (clanId != null) {
-            Clan clan = plugin.getDatabaseManager().getClanById(clanId);
-            if (clan != null && clan.getName().equalsIgnoreCase(clanName)) {
-                return clanId;
-            }
-        }
-        return null;
-    }
-
-    // Método para o tab-complete
-    public List<String> getPendingInvitesForPlayer(UUID playerUUID) {
-        List<String> clanNames = new ArrayList<>();
-        Integer clanId = pendingInvites.get(playerUUID);
-        if (clanId != null) {
-            Clan clan = plugin.getDatabaseManager().getClanById(clanId);
-            if (clan != null) {
-                clanNames.add(clan.getName());
-            }
-        }
-        return clanNames;
-    }
-
-    public void removeInvite(UUID invitedPlayer, String clanName) {
-        // Lógica para remover o convite específico
-        pendingInvites.remove(invitedPlayer);
-    }
-
     public Integer getPendingInvite(UUID invitedPlayer) {
         return pendingInvites.get(invitedPlayer);
     }
@@ -99,12 +84,16 @@ public class ClanManager {
     }
 
     public CompletableFuture<Clan> getClanById(int clanId) {
-        return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().getClanById(clanId));
+        return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().getClanById(clanId), plugin.getThreadPool());
     }
 
-    public void broadcastToClan(int clanId, String message) {
-        // Este método pode ser removido ou atualizado para usar o novo sistema.
-        // Por enquanto, vamos deixá-lo vazio para não causar erros.
+    public Clan getClanByTag(String tag) {
+        // Este método busca de forma síncrona, útil em alguns casos específicos
+        return plugin.getDatabaseManager().getClanByTag(tag);
+    }
+
+    public CompletableFuture<Clan> getClanByTagAsync(String tag) {
+        return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().getClanByTag(tag), plugin.getThreadPool());
     }
 
     public boolean isValidClanName(String name) {
@@ -113,7 +102,7 @@ public class ClanManager {
 
     public boolean isValidClanTag(String tag) {
         if (tag == null || tag.trim().isEmpty()) return false;
-        String cleanTag = ChatColor.stripColor(translateHexColors(tag));
+        String cleanTag = ChatColor.stripColor(translateColors(tag));
         if (!TAG_CLEAN_PATTERN.matcher(cleanTag).matches()) {
             return false;
         }
@@ -121,29 +110,8 @@ public class ClanManager {
         return expandedTag.length() <= 1000;
     }
 
-    public String translateHexColors(String message) {
-        if (message == null) return null;
-        return HEX_PATTERN.matcher(message).replaceAll(match -> {
-            String hex = match.group().substring(2);
-            StringBuilder magic = new StringBuilder("§x");
-            for (char c : hex.toCharArray()) {
-                magic.append("§").append(c);
-            }
-            return magic.toString();
-        });
-    }
-
     public String translateColors(String message) {
-        if (message == null) return null;
-        String hexTranslated = HEX_PATTERN.matcher(message).replaceAll(match -> {
-            String hex = match.group().substring(2);
-            StringBuilder magic = new StringBuilder("§x");
-            for (char c : hex.toCharArray()) {
-                magic.append("§").append(Character.toLowerCase(c));
-            }
-            return magic.toString();
-        });
-        return ChatColor.translateAlternateColorCodes('&', hexTranslated);
+        return plugin.getMessagesManager().translateColors(message);
     }
 
     public String formatDisplayName(String name) {
@@ -168,14 +136,6 @@ public class ClanManager {
         return playerClans.get(playerUuid);
     }
 
-    public void updatePlayerClan(UUID playerUuid, Clan clan) {
-        if (clan != null) {
-            playerClans.put(playerUuid, clan);
-        } else {
-            playerClans.remove(playerUuid);
-        }
-    }
-
     public String getPlayerClanTag(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
         return clan != null ? translateColors(clan.getTag()) : "";
@@ -186,19 +146,9 @@ public class ClanManager {
         return clan != null ? formatDisplayName(clan.getName()) : "";
     }
 
-    public boolean isTagTooLong(String tag) {
-        if (tag == null) return false;
-        return getExpandedTagLength(tag) > 1000;
-    }
-
-    public int getExpandedTagLength(String tag) {
-        if (tag == null) return 0;
-        return translateColors(tag).length();
-    }
-
     public String getCleanTag(String tag) {
         if (tag == null) return "";
-        return ChatColor.stripColor(translateHexColors(tag));
+        return ChatColor.stripColor(translateColors(tag));
     }
 
     public String getPlayerClanTagWithLabels(UUID playerUuid) {
@@ -226,13 +176,30 @@ public class ClanManager {
         String smallTag = SmallTextConverter.toSmallCapsPreservingColors(translatedTag);
         return brackets[0] + smallTag + brackets[1];
     }
+    public String getCommandFromAlias(String alias) {
+        // Este é um método simples para ajudar o onTabComplete a saber
+        // se o jogador digitou /clan ally ou /clan rival.
+        // No futuro, isso pode ser melhorado se você adicionar mais aliases.
+        if (alias.equalsIgnoreCase("ally")) {
+            return "ally";
+        }
+        if (alias.equalsIgnoreCase("rival")) {
+            return "rival";
+        }
+        return ""; // Retorna vazio se não for um alias conhecido
+    }
 
     private String getPlayerRole(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
         if (clan == null) return "MEMBER";
         if (clan.getOwnerUuid().equals(playerUuid)) return "LEADER";
+
+        // Esta é uma operação de banco de dados, o ideal seria fazê-la de forma assíncrona
+        // Mas para a lógica de cores do placeholder, uma chamada síncrona pode ser aceitável
+        // se não for chamada com muita frequência (ex: a cada mensagem no chat).
         String dbRole = plugin.getDatabaseManager().getMemberRole(clan.getId(), playerUuid);
-        if ("ADMIN".equalsIgnoreCase(dbRole)) return "LEADER";
+        if ("ADMIN".equalsIgnoreCase(dbRole) || "VICE_LEADER".equalsIgnoreCase(dbRole)) return "LEADER";
+
         return "MEMBER";
     }
 
@@ -253,14 +220,5 @@ public class ClanManager {
             rightBracket = plugin.getConfig().getString("settings.placeholder-colors.default.right-bracket", "&8]");
         }
         return new String[]{translateColors(leftBracket), translateColors(rightBracket)};
-    }
-
-    public void debugColorTranslation(String input) {
-        plugin.getLogger().info("=== DEBUG CORES ===");
-        plugin.getLogger().info("Input: " + input);
-        plugin.getLogger().info("Hex Translated: " + translateHexColors(input));
-        plugin.getLogger().info("Full Translated: " + translateColors(input));
-        plugin.getLogger().info("Clean Tag: " + getCleanTag(input));
-        plugin.getLogger().info("==================");
     }
 }
