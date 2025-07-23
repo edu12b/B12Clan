@@ -1054,6 +1054,27 @@ public class DatabaseManager {
             return tags;
         }, plugin.getThreadPool());
     }
+    // NOVO MÉTODO
+    public CompletableFuture<Boolean> updateClanBannerAsync(int clanId, String bannerData) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "UPDATE b12_clans SET banner_data = ? WHERE id = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+
+                if (bannerData == null) {
+                    ps.setNull(1, Types.VARCHAR);
+                } else {
+                    ps.setString(1, bannerData);
+                }
+                ps.setInt(2, clanId);
+
+                return ps.executeUpdate() > 0;
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar o banner do clã " + clanId, e);
+                return false;
+            }
+        }, plugin.getThreadPool());
+    }
 
     // NOVO
     public CompletableFuture<List<String>> getAllRivalTagsAsync(int clanId) {
@@ -1073,6 +1094,9 @@ public class DatabaseManager {
             }
             return tags;
         }, plugin.getThreadPool());
+    }
+    public CompletableFuture<Boolean> areAlliesAsync(int clanId1, int clanId2) {
+        return CompletableFuture.supplyAsync(() -> areAllies(clanId1, clanId2), plugin.getThreadPool());
     }
     // NOVO
     public CompletableFuture<String> getMemberRoleAsync(int clanId, UUID playerUuid) {

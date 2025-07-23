@@ -52,11 +52,13 @@ public class ClanManager {
 
     public void broadcastToClan(Clan clan, String messageKey, String... placeholders) {
         if (clan == null) return;
-        String messageToSend = messages.getMessage(messageKey, placeholders);
+        String rawMessage = messages.getMessage(messageKey, placeholders);
+        String coloredMessage = translateColors(rawMessage); // <-- LINHA ADICIONADA PARA TRADUZIR AS CORES
+
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             Clan playerClan = getPlayerClan(onlinePlayer.getUniqueId());
             if (playerClan != null && playerClan.getId() == clan.getId()) {
-                onlinePlayer.sendMessage(messageToSend);
+                onlinePlayer.sendMessage(coloredMessage); // Envia a mensagem já colorida
             }
         }
     }
@@ -187,6 +189,11 @@ public class ClanManager {
             return "rival";
         }
         return ""; // Retorna vazio se não for um alias conhecido
+    }
+    public boolean isTagTooLong(String tag) {
+        if (tag == null) return false;
+        String expandedTag = translateColors(tag);
+        return expandedTag.length() > 1000; // O limite definido no seu config
     }
 
     private String getPlayerRole(UUID playerUuid) {

@@ -26,12 +26,23 @@ public class MessagesManager {
         loadMessages();
     }
 
+    // MÉTODO ATUALIZADO
     public void loadMessages() {
         File langFile = new File(plugin.getDataFolder(), "lang.yml");
         if (!langFile.exists()) {
-            plugin.saveResource("lang.yml", false);
+            plugin.getLogger().info("lang.yml não encontrado, criando arquivo padrão...");
+            plugin.saveResource("lang.yml", false); // false para não sobrescrever se já existir
         }
+
+        // Carrega a configuração do arquivo na pasta do servidor
         langConfig = YamlConfiguration.loadConfiguration(langFile);
+
+        // Adiciona uma verificação de versão para garantir que o lang.yml está atualizado
+        if (!langConfig.isSet("version") || langConfig.getDouble("version") < 1.1) {
+            plugin.getLogger().warning("Seu arquivo lang.yml parece estar desatualizado!");
+            plugin.getLogger().warning("Considere renomear seu lang.yml antigo e deixar o plugin gerar um novo.");
+        }
+
         prefix = translateColors(langConfig.getString("prefix", ""));
     }
 
