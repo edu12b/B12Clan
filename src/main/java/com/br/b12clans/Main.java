@@ -1,4 +1,3 @@
-// ARQUIVO: src/main/java/com/br/b12clans/Main.java
 package com.br.b12clans;
 
 import com.br.b12clans.chat.ClanChatManager;
@@ -12,12 +11,14 @@ import com.br.b12clans.listeners.ChatListener;
 import com.br.b12clans.listeners.KDRListener;
 import com.br.b12clans.listeners.PlayerListener;
 import com.br.b12clans.managers.ClanManager;
-import com.br.b12clans.managers.CommandManager; // <-- IMPORT ADICIONADO
+import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.managers.EconomyManager;
 import com.br.b12clans.placeholders.ClanPlaceholder;
 import com.br.b12clans.utils.MessagesManager;
+import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
 
+import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
@@ -29,7 +30,7 @@ public class Main extends JavaPlugin {
     private ClanChatManager clanChatManager;
     private DiscordManager discordManager;
     private EconomyManager economyManager;
-    private CommandManager commandManager; // <-- ADICIONADO
+    private CommandManager commandManager;
     private ExecutorService threadPool;
 
     @Override
@@ -45,11 +46,9 @@ public class Main extends JavaPlugin {
             return;
         }
 
-        // Inicializa os novos managers
         this.messagesManager = new MessagesManager(this);
-        this.commandManager = new CommandManager(this); // <-- ADICIONADO
+        this.commandManager = new CommandManager(this);
 
-        // Managers que podem depender dos outros
         this.clanManager = new ClanManager(this);
         this.clanChatManager = new ClanChatManager(this);
         this.discordManager = new DiscordManager(this);
@@ -76,32 +75,57 @@ public class Main extends JavaPlugin {
         getLogger().info("B12Clans foi desabilitado!");
     }
 
+    // ##### MÉTODO ATUALIZADO PARA REGISTRO DINÂMICO #####
     private void registerCommands() {
-        ClanCommand clanCommandExecutor = new ClanCommand(this);
-        ClanChatCommand clanChatCommand = new ClanChatCommand(this, clanManager, clanChatManager, messagesManager);
-        AllyChatCommand allyChatCommand = new AllyChatCommand(this, clanManager, clanChatManager, messagesManager);
-        DiscordCommand discordCommand = new DiscordCommand(this, discordManager, messagesManager);
+        // Comando principal /clan
+        getCommand("clan").setExecutor(new ClanCommand(this));
 
-        getCommand("clan").setExecutor(clanCommandExecutor);
-        getCommand("clan").setTabCompleter(clanCommandExecutor);
-        getCommand(".").setExecutor(clanChatCommand);
-        getCommand(".").setTabCompleter(clanChatCommand);
-        getCommand("ally").setExecutor(allyChatCommand);
-        getCommand("ally").setTabCompleter(allyChatCommand);
+        // Comando de Discord
+        DiscordCommand discordCommand = new DiscordCommand(this);
         getCommand("discord").setExecutor(discordCommand);
-        getCommand("discord").setTabCompleter(discordCommand);
         getCommand("vincular").setExecutor(discordCommand);
         getCommand("desvincular").setExecutor(discordCommand);
 
-        getCommand("bank").setExecutor(clanCommandExecutor);
-        getCommand("bank").setTabCompleter(clanCommandExecutor);
-        getCommand("banco").setExecutor(clanCommandExecutor);
-        getCommand("banco").setTabCompleter(clanCommandExecutor);
+        // --- Registro dinâmico dos comandos de CHAT ---
+
+        // Chat do Clã
+        List<String> clanChatAliases = commandManager.getChatCommandAliases("clan-chat");
+        if (clanChatAliases != null && !clanChatAliases.isEmpty()) {
+            ClanChatCommand clanChatCommand = new ClanChatCommand(this);
+            for (String alias : clanChatAliases) {
+                PluginCommand command = getCommand(alias);
+                if (command != null) {
+                    command.setExecutor(clanChatCommand);
+                    command.setTabCompleter(clanChatCommand);
+                } else {
+                    getLogger().warning("Comando '" + alias + "' definido no commands.yml mas não encontrado no plugin.yml!");
+                }
+            }
+        } else {
+            getLogger().warning("Nenhum alias encontrado para 'clan-chat' no commands.yml!");
+        }
+
+        // Chat dos Aliados
+        List<String> allyChatAliases = commandManager.getChatCommandAliases("ally-chat");
+        if (allyChatAliases != null && !allyChatAliases.isEmpty()) {
+            AllyChatCommand allyChatCommand = new AllyChatCommand(this);
+            for (String alias : allyChatAliases) {
+                PluginCommand command = getCommand(alias);
+                if (command != null) {
+                    command.setExecutor(allyChatCommand);
+                    command.setTabCompleter(allyChatCommand);
+                } else {
+                    getLogger().warning("Comando '" + alias + "' definido no commands.yml mas não encontrado no plugin.yml!");
+                }
+            }
+        } else {
+            getLogger().warning("Nenhum alias encontrado para 'ally-chat' no commands.yml!");
+        }
     }
 
     private void registerPlaceholders() {
         if (getServer().getPluginManager().getPlugin("PlaceholderAPI") != null) {
-            new ClanPlaceholder(this, clanManager).register();
+            new ClanPlaceholder(this).register();
             getLogger().info("PlaceholderAPI integração registrada!");
         } else {
             getLogger().warning("PlaceholderAPI não encontrado! Placeholders não estarão disponíveis.");
@@ -121,6 +145,6 @@ public class Main extends JavaPlugin {
     public ClanChatManager getClanChatManager() { return clanChatManager; }
     public DiscordManager getDiscordManager() { return discordManager; }
     public EconomyManager getEconomyManager() { return economyManager; }
-    public CommandManager getCommandManager() { return commandManager; } // <-- ADICIONADO
+    public CommandManager getCommandManager() { return commandManager; }
     public ExecutorService getThreadPool() { return threadPool; }
 }

@@ -51,6 +51,10 @@ public class CommandManager {
             plugin.saveResource("commands.yml", false);
         }
     }
+    public List<String> getChatCommandAliases(String chatType) {
+        // chatType será "clan-chat" ou "ally-chat"
+        return getConfig().getStringList("chat-commands." + chatType);
+    }
 
     public List<String> getAliasesFor(String commandKey) {
         return getConfig().getStringList("main-commands." + commandKey);

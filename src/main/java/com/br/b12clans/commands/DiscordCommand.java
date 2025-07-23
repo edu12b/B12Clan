@@ -19,10 +19,10 @@ public class DiscordCommand implements CommandExecutor, TabCompleter {
     private final DiscordManager discordManager;
     private final MessagesManager messages;
 
-    public DiscordCommand(Main plugin, DiscordManager discordManager, MessagesManager messages) {
+    public DiscordCommand(Main plugin) {
         this.plugin = plugin;
-        this.discordManager = discordManager;
-        this.messages = messages;
+        this.discordManager = plugin.getDiscordManager();
+        this.messages = plugin.getMessagesManager();
     }
 
     @Override

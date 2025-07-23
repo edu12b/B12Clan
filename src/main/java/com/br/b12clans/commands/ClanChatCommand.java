@@ -22,11 +22,11 @@ public class ClanChatCommand implements CommandExecutor, TabCompleter {
     private final ClanChatManager chatManager;
     private final MessagesManager messages;
 
-    public ClanChatCommand(Main plugin, ClanManager clanManager, ClanChatManager chatManager, MessagesManager messages) {
+    public ClanChatCommand(Main plugin) {
         this.plugin = plugin;
-        this.clanManager = clanManager;
-        this.chatManager = chatManager;
-        this.messages = messages;
+        this.clanManager = plugin.getClanManager(); // <--- Add this line
+        this.chatManager = plugin.getClanChatManager();
+        this.messages = plugin.getMessagesManager();
     }
 
     @Override

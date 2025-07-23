@@ -1,0 +1,86 @@
+name: B12Clans
+version: 1.2
+main: com.br.b12clans.Main
+api-version: 1.21
+author: Eduardo12B,WilianSantos
+description: Sistema de clãs
+website: https://github.com/TheEternalDark/B12Clan
+
+softdepend: [PlaceholderAPI, Vault]
+
+commands:
+  clan:
+    description: Comando principal do sistema de clãs
+    usage: /clan <subcomando>
+    permission: b12clans.use
+    permission-message: §cVocê não tem permissão para usar este comando!
+  .:
+    description: Chat do clã
+    usage: /. <mensagem>
+    permission: b12clans.chat.clan
+    permission-message: §cVocê não tem permissão para usar o chat do clã!
+  ally:
+    description: Chat dos aliados
+    usage: /ally <mensagem>
+    permission: b12clans.chat.ally
+    permission-message: §cVocê não tem permissão para usar o chat dos aliados!
+  discord:
+    description: Comandos do Discord
+    usage: /discord <subcomando>
+    permission: b12clans.discord
+    permission-message: §cVocê não tem permissão para usar comandos do Discord!
+  vincular:
+    description: Vincular conta do Discord
+    usage: /vincular
+    permission: b12clans.discord
+    permission-message: §cVocê não tem permissão para vincular conta do Discord!
+  desvincular:
+    description: Desvincular conta do Discord
+    usage: /desvincular
+    permission: b12clans.discord
+    permission-message: §cVocê não tem permissão para desvincular conta do Discord!
+  bank:
+    description: Comandos do banco do clã
+    usage: /bank <subcomando>
+    permission: b12clans.bank
+    permission-message: §cVocê não tem permissão para usar comandos do banco!
+  banco:
+    description: Comandos do banco do clã
+    usage: /banco <subcomando>
+    permission: b12clans.bank
+    permission-message: §cVocê não tem permissão para usar comandos do banco!
+
+permissions:
+  b12clans.use:
+    description: Permissão básica para usar comandos de clã
+    default: true
+  b12clans.criar:
+    description: Permissão para criar clãs
+    default: true
+  b12clans.admin:
+    description: Permissões administrativas do plugin
+    default: op
+  b12clans.promover:
+    description: Permissão para promover membros do clã
+    default: op
+  b12clans.rebaixar:
+    description: Permissão para rebaixar membros do clã
+    default: op
+  b12clans.chat.clan:
+    description: Permissão para usar o chat do clã
+    default: true
+  b12clans.chat.ally:
+    description: Permissão para usar o chat dos aliados
+    default: true
+  b12clans.discord:
+    description: Permissão para usar comandos do Discord
+    default: true
+  b12clans.bank:
+    description: Permissão para usar comandos do banco do clã
+    default: true
+  b12clans.bank.deposit:
+    description: Permissão para depositar no banco do clã
+    default: true
+  b12clans.bank.withdraw:
+    description: Permissão para sacar do banco do clã
+    default: op

@@ -10,9 +10,9 @@ public class ClanPlaceholder extends PlaceholderExpansion {
     private final Main plugin;
     private final ClanManager clanManager;
 
-    public ClanPlaceholder(Main plugin, ClanManager clanManager) {
+    public ClanPlaceholder(Main plugin) {
         this.plugin = plugin;
-        this.clanManager = clanManager;
+        this.clanManager = plugin.getClanManager();
     }
 
     @Override

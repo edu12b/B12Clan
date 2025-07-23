@@ -53,3 +53,23 @@ sub-command-actions:
     deposit: ['deposit', 'depositar']
     withdraw: ['withdraw', 'sacar']
     balance: ['balance', 'saldo']
+
+# ========================================
+# COMANDOS DE CHAT
+# ========================================
+# Defina os aliases para os comandos de chat.
+# O Geyser (Bedrock) não suporta comandos que começam com ".".
+# Use algo como "c", "chatclan", etc. como alternativa.
+# ========================================
+chat-commands:
+  # Comando para o chat do clã. O primeiro da lista é o principal.
+  clan-chat:
+    - "."
+    - "c"
+    - "chatclan"
+
+  # Comando para o chat dos aliados.
+  ally-chat:
+    - "ally"
+    - "a"
+    - "chataliado"

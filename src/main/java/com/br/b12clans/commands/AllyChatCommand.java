@@ -22,11 +22,11 @@ public class AllyChatCommand implements CommandExecutor, TabCompleter {
     private final ClanChatManager chatManager;
     private final MessagesManager messages;
 
-    public AllyChatCommand(Main plugin, ClanManager clanManager, ClanChatManager chatManager, MessagesManager messages) {
+    public AllyChatCommand(Main plugin) {
         this.plugin = plugin;
-        this.clanManager = clanManager;
-        this.chatManager = chatManager;
-        this.messages = messages;
+        this.chatManager = plugin.getClanChatManager();
+        this.clanManager = plugin.getClanManager(); // <--- Add this line
+        this.messages = plugin.getMessagesManager();
     }
 
     @Override
