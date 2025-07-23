@@ -1,14 +1,15 @@
-// ARQUIVO: src/main/java/com/br/b12clans/commands/ClanCommand.java
 package com.br.b12clans.commands;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.commands.subcommands.*;
+import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.TabCompleter;
 import org.bukkit.entity.Player;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,47 +17,60 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
 
     private final Main plugin;
     private final MessagesManager messages;
+    private final CommandManager commandManager;
     private final Map<String, SubCommand> subCommands = new HashMap<>();
-    private final CargoCommand cargoCommand;
-    private final BankCommand bankCommand;
-    private final ConfigCommand configCommand;
-    private final AllyCommand allyCommand;
-    private final RivalCommand rivalCommand;
-    private final AjudaCommand ajudaCommand; // <-- ADICIONADO
+    private final AjudaCommand ajudaCommand;
 
     public ClanCommand(Main plugin) {
         this.plugin = plugin;
         this.messages = plugin.getMessagesManager();
-        this.cargoCommand = new CargoCommand(plugin);
-        this.bankCommand = new BankCommand(plugin);
-        this.configCommand = new ConfigCommand(plugin);
-        this.allyCommand = new AllyCommand(plugin);
-        this.rivalCommand = new RivalCommand(plugin);
-        this.ajudaCommand = new AjudaCommand(plugin); // <-- ADICIONADO
+        this.commandManager = plugin.getCommandManager();
+        this.ajudaCommand = new AjudaCommand(plugin);
         registerSubCommands();
     }
 
     private void registerSubCommands() {
-        subCommands.put("criar", new CriarCommand(plugin));
-        subCommands.put("info", new InfoCommand(plugin));
-        subCommands.put("convite", new ConviteCommand(plugin));
-        subCommands.put("sair", new SairCommand(plugin));
-        subCommands.put("expulsar", new ExpulsarCommand(plugin));
-        subCommands.put("promover", cargoCommand);
-        subCommands.put("rebaixar", cargoCommand);
-        subCommands.put("deletar", new DeletarCommand(plugin));
-        subCommands.put("titulo", new TituloCommand(plugin));
-        subCommands.put("description", new DescriptionCommand(plugin));
-        subCommands.put("bank", bankCommand);
-        subCommands.put("banco", bankCommand);
-        subCommands.put("config", configCommand);
-        subCommands.put("home", new HomeCommand(plugin));
-        subCommands.put("ver", new VerCommand(plugin));
-        subCommands.put("kdr", new KDRCommand(plugin));
-        subCommands.put("ally", allyCommand);
-        subCommands.put("rival", rivalCommand);
-        subCommands.put("ajuda", ajudaCommand); // <-- ADICIONADO
-        subCommands.put("help", ajudaCommand); // Alias em inglês
+        // 1. Mapeia o nome interno (chave do yml) para a sua classe de comando
+        Map<String, SubCommand> commandMap = new HashMap<>();
+        CargoCommand cargoCmd = new CargoCommand(plugin); // Instancia uma vez para reutilizar
+
+        commandMap.put("create", new CriarCommand(plugin));
+        commandMap.put("info", new InfoCommand(plugin));
+        commandMap.put("help", ajudaCommand);
+        commandMap.put("invite", new ConviteCommand(plugin));
+        commandMap.put("leave", new SairCommand(plugin));
+        commandMap.put("kick", new ExpulsarCommand(plugin));
+        commandMap.put("promote", cargoCmd);
+        commandMap.put("demote", cargoCmd);
+        commandMap.put("title", new TituloCommand(plugin));
+        commandMap.put("config", new ConfigCommand(plugin));
+        commandMap.put("description", new DescriptionCommand(plugin));
+        commandMap.put("home", new HomeCommand(plugin));
+        commandMap.put("ally", new AllyCommand(plugin));
+        commandMap.put("rival", new RivalCommand(plugin));
+        commandMap.put("view", new VerCommand(plugin));
+        commandMap.put("kdr", new KDRCommand(plugin));
+        commandMap.put("delete", new DeletarCommand(plugin));
+        commandMap.put("bank", new BankCommand(plugin));
+
+        // 2. Pega as chaves dos comandos do commands.yml (create, info, ally, etc.)
+        Set<String> commandKeys = commandManager.getCommandKeys();
+        if (commandKeys.isEmpty()) {
+            plugin.getLogger().severe("A seção 'main-commands:' não foi encontrada ou está vazia no commands.yml!");
+            plugin.getLogger().severe("Verifique se o arquivo existe e não tem erros de indentação.");
+            return;
+        }
+
+        // 3. Para cada chave, pega seus aliases e registra no mapa principal que o servidor usa
+        for (String commandKey : commandKeys) {
+            SubCommand subCommand = commandMap.get(commandKey);
+            if (subCommand != null) {
+                List<String> aliases = commandManager.getAliasesFor(commandKey);
+                for (String alias : aliases) {
+                    subCommands.put(alias.toLowerCase(), subCommand);
+                }
+            }
+        }
     }
 
     @Override
@@ -67,9 +81,8 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         }
         Player player = (Player) sender;
 
-        // ##### LÓGICA DE AJUDA ATUALIZADA #####
         if (args.length == 0) {
-            ajudaCommand.execute(player, new String[0]); // Mostra a ajuda completa
+            ajudaCommand.execute(player, new String[0]);
             return true;
         }
 
@@ -77,7 +90,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         SubCommand subCommand = subCommands.get(subCommandName);
 
         if (subCommand == null) {
-            ajudaCommand.execute(player, new String[0]); // Comando inválido, mostra a ajuda
+            ajudaCommand.execute(player, new String[0]);
             return true;
         }
 
@@ -88,8 +101,10 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         }
         String[] subCommandArgs = Arrays.copyOfRange(args, 1, args.length);
 
+        // Lógica especial para CargoCommand, corrigida para funcionar com aliases
         if (subCommand instanceof CargoCommand) {
-            boolean isPromoting = subCommandName.equals("promover");
+            // Verifica se o alias digitado pertence à lista de aliases de "promote"
+            boolean isPromoting = commandManager.getAliasesFor("promote").contains(subCommandName);
             ((CargoCommand) subCommand).handleCommand(player, subCommandArgs, isPromoting);
         } else {
             subCommand.execute(player, subCommandArgs);

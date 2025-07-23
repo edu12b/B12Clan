@@ -1,0 +1,55 @@
+# ========================================
+#           B12CLANS - COMMANDS.YML (v2)
+# ========================================
+
+# Nomes dos comandos principais (ex: /clan <comando>)
+main-commands:
+  create: ['create', 'criar']
+  info: ['info', 'who']
+  help: ['help', 'ajuda']
+  invite: ['invite', 'convite']
+  leave: ['leave', 'sair']
+  kick: ['kick', 'expulsar']
+  promote: ['promote', 'promover']
+  demote: ['demote', 'rebaixar']
+  title: ['title', 'titulo']
+  config: ['config', 'settings']
+  description: ['description', 'desc']
+  home: ['home']
+  ally: ['ally', 'aliado']
+  rival: ['rival']
+  view: ['view', 'ver']
+  kdr: ['kdr']
+  delete: ['delete', 'disband', 'deletar']
+  bank: ['bank', 'banco']
+
+# Nomes das AÇÕES dentro de cada comando (ex: /clan ally <ação>)
+sub-command-actions:
+  ally:
+    request: ['request', 'solicitar', 'pedir']
+    accept: ['accept', 'aceitar']
+    deny: ['deny', 'negar']
+    remove: ['remove', 'remover']
+
+  rival:
+    add: ['add', 'adicionar']
+    remove: ['remove', 'remover']
+
+  config:
+    tag: ['tag']
+    fee: ['fee', 'taxa']
+    banner: ['banner', 'estandarte']
+
+  invite:
+    add: ['add', 'adicionar']
+    accept: ['accept', 'aceitar']
+    deny: ['deny', 'negar']
+
+  home:
+    set: ['set', 'setar']
+    clear: ['clear', 'limpar']
+
+  bank:
+    deposit: ['deposit', 'depositar']
+    withdraw: ['withdraw', 'sacar']
+    balance: ['balance', 'saldo']

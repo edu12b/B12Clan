@@ -34,4 +34,5 @@ com/br/b12clans/commands/subcommands/HomeCommand.class
 com/br/b12clans/commands/DiscordCommand.class
 com/br/b12clans/models/Clan.class
 com/br/b12clans/chat/DiscordManager.class
+com/br/b12clans/managers/CommandManager.class
 com/br/b12clans/database/ClanExistenceStatus.class

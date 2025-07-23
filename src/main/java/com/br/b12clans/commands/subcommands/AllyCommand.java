@@ -1,8 +1,8 @@
-// ARQUIVO: src/main/java/com/br/b12clans/commands/subcommands/AllyCommand.java
 package com.br.b12clans.commands.subcommands;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.Bukkit;
@@ -19,11 +19,13 @@ public class AllyCommand implements SubCommand {
     private final Main plugin;
     private final ClanManager clanManager;
     private final MessagesManager messages;
+    private final CommandManager commandManager;
 
     public AllyCommand(Main plugin) {
         this.plugin = plugin;
         this.clanManager = plugin.getClanManager();
         this.messages = plugin.getMessagesManager();
+        this.commandManager = plugin.getCommandManager();
     }
 
     @Override
@@ -51,7 +53,6 @@ public class AllyCommand implements SubCommand {
 
         String action = args[0].toLowerCase();
 
-        // Permissão é verificada para todas as ações
         plugin.getDatabaseManager().getMemberRoleAsync(sourceClan.getId(), player.getUniqueId())
                 .thenAccept(role -> {
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -60,61 +61,53 @@ public class AllyCommand implements SubCommand {
                             return;
                         }
 
-                        if (args.length < 2 && !action.equals("list")) { // "list" pode não ter argumentos
+                        if (args.length < 2) {
                             messages.sendMessage(player, "ally-usage-new");
                             return;
                         }
 
-                        String targetTag = args.length > 1 ? args[1] : null;
+                        String targetTag = args[1];
 
-                        switch (action) {
-                            case "request":
-                                handleAllyRequest(player, sourceClan, targetTag);
-                                break;
-                            case "accept":
-                                handleAllyAccept(player, sourceClan, targetTag);
-                                break;
-                            case "deny":
-                                handleAllyDeny(player, sourceClan, targetTag);
-                                break;
-                            case "remove":
-                                handleAllyRemove(player, sourceClan, targetTag);
-                                break;
-                            default:
-                                messages.sendMessage(player, "ally-usage-new");
-                                break;
+                        if (commandManager.getActionAliasesFor("ally", "request").contains(action)) {
+                            handleAllyRequest(player, sourceClan, targetTag);
+                        } else if (commandManager.getActionAliasesFor("ally", "accept").contains(action)) {
+                            handleAllyAccept(player, sourceClan, targetTag);
+                        } else if (commandManager.getActionAliasesFor("ally", "deny").contains(action)) {
+                            handleAllyDeny(player, sourceClan, targetTag);
+                        } else if (commandManager.getActionAliasesFor("ally", "remove").contains(action)) {
+                            handleAllyRemove(player, sourceClan, targetTag);
+                        } else {
+                            messages.sendMessage(player, "ally-usage-new");
                         }
                     });
                 });
     }
 
-    // ##### MÉTODO REESCRITO E CORRIGIDO #####
     private void handleAllyRequest(Player player, Clan sourceClan, String targetTag) {
         clanManager.getClanByTagAsync(targetTag).thenAccept(targetClan -> {
-            if (targetClan == null) {
-                plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "clan-not-found", "%tag%", targetTag));
-                return;
-            }
-            if (targetClan.getId() == sourceClan.getId()) {
-                plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "cannot-ally-self"));
-                return;
-            }
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                if (targetClan == null) {
+                    messages.sendMessage(player, "clan-not-found", "%tag%", targetTag);
+                    return;
+                }
+                if (targetClan.getId() == sourceClan.getId()) {
+                    messages.sendMessage(player, "cannot-ally-self");
+                    return;
+                }
 
-            // Verificação de aliança existente
-            plugin.getDatabaseManager().areAlliesAsync(sourceClan.getId(), targetClan.getId())
-                    .thenAccept(areAllies -> {
-                        plugin.getServer().getScheduler().runTask(plugin, () -> {
-                            if (areAllies) {
-                                // CORREÇÃO AQUI: Usando o placeholder e o valor corretos
-                                messages.sendMessage(player, "already-allies", "%target_clan%", targetClan.getName());
-                            } else {
-                                // Se não são aliados, envia o pedido
-                                clanManager.addAllianceRequest(targetClan.getId(), sourceClan.getId());
-                                messages.sendMessage(player, "ally-request-sent", "%target_clan%", targetClan.getName());
-                                clanManager.broadcastToClan(targetClan, "ally-request-received", "%source_clan%", sourceClan.getName(), "%source_clan_tag%", clanManager.getCleanTag(sourceClan.getTag()));
-                            }
+                plugin.getDatabaseManager().areAlliesAsync(sourceClan.getId(), targetClan.getId())
+                        .thenAccept(areAllies -> {
+                            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                                if (areAllies) {
+                                    messages.sendMessage(player, "already-allies", "%target_clan%", targetClan.getName());
+                                } else {
+                                    clanManager.addAllianceRequest(targetClan.getId(), sourceClan.getId());
+                                    messages.sendMessage(player, "ally-request-sent", "%target_clan%", targetClan.getName());
+                                    clanManager.broadcastToClan(targetClan, "ally-request-received", "%source_clan%", sourceClan.getName(), "%source_clan_tag%", clanManager.getCleanTag(sourceClan.getTag()));
+                                }
+                            });
                         });
-                    });
+            });
         });
     }
 
@@ -156,9 +149,7 @@ public class AllyCommand implements SubCommand {
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (requesterClan != null && clanManager.getCleanTag(requesterClan.getTag()).equalsIgnoreCase(requesterTag)) {
                     clanManager.removeAllianceRequest(acceptorClan.getId());
-                    // Mensagem para quem negou
                     messages.sendMessage(player, "ally-request-denied", "%source_clan%", requesterClan.getName());
-                    // Mensagem para quem teve o pedido negado
                     clanManager.broadcastToClan(requesterClan, "ally-request-denied-broadcast", "%target_clan%", acceptorClan.getName());
                 } else {
                     messages.sendMessage(player, "no-pending-ally-request", "%clan_tag%", requesterTag);
@@ -186,10 +177,16 @@ public class AllyCommand implements SubCommand {
     @Override
     public List<String> onTabComplete(Player player, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("request", "accept", "deny", "remove").stream()
+            List<String> allActions = commandManager.getActionAliasesFor("ally", "request");
+            allActions.addAll(commandManager.getActionAliasesFor("ally", "accept"));
+            allActions.addAll(commandManager.getActionAliasesFor("ally", "deny"));
+            allActions.addAll(commandManager.getActionAliasesFor("ally", "remove"));
+
+            return allActions.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }
+
         if (args.length == 2) {
             Clan playerClan = clanManager.getPlayerClan(player.getUniqueId());
             if (playerClan == null) return Collections.emptyList();

@@ -1,8 +1,8 @@
-// ARQUIVO: src/main/java/com/br/b12clans/commands/subcommands/ConfigCommand.java
 package com.br.b12clans.commands.subcommands;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.managers.EconomyManager;
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.utils.MessagesManager;
@@ -11,7 +11,7 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.BannerMeta;
 import org.bukkit.util.io.BukkitObjectOutputStream;
-import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder; // <-- IMPORT ADICIONADO
+import org.yaml.snakeyaml.external.biz.base64Coder.Base64Coder;
 
 import java.io.ByteArrayOutputStream;
 import java.util.Arrays;
@@ -20,19 +20,20 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
-
 public class ConfigCommand implements SubCommand {
 
     private final Main plugin;
     private final ClanManager clanManager;
     private final MessagesManager messages;
     private final EconomyManager economyManager;
+    private final CommandManager commandManager; // <-- Dependência adicionada
 
     public ConfigCommand(Main plugin) {
         this.plugin = plugin;
         this.clanManager = plugin.getClanManager();
         this.messages = plugin.getMessagesManager();
         this.economyManager = plugin.getEconomyManager();
+        this.commandManager = plugin.getCommandManager(); // <-- Inicialização
     }
 
     @Override
@@ -66,19 +67,16 @@ public class ConfigCommand implements SubCommand {
         String action = args[0].toLowerCase();
         String[] actionArgs = Arrays.copyOfRange(args, 1, args.length);
 
-        switch (action) {
-            case "tag":
-                handleModTag(player, clan, actionArgs);
-                break;
-            case "fee":
-                handleFee(player, clan, actionArgs);
-                break;
-            case "banner":
-                handleSetBanner(player, clan);
-                break;
-            default:
-                messages.sendMessage(player, "config-usage");
-                break;
+        // ##### LÓGICA ATUALIZADA AQUI #####
+        // Compara a ação do jogador com as listas de aliases do commands.yml
+        if (commandManager.getActionAliasesFor("config", "tag").contains(action)) {
+            handleModTag(player, clan, actionArgs);
+        } else if (commandManager.getActionAliasesFor("config", "fee").contains(action)) {
+            handleFee(player, clan, actionArgs);
+        } else if (commandManager.getActionAliasesFor("config", "banner").contains(action)) {
+            handleSetBanner(player, clan);
+        } else {
+            messages.sendMessage(player, "config-usage");
         }
     }
 
@@ -122,7 +120,6 @@ public class ConfigCommand implements SubCommand {
         }
     }
 
-    // O resto dos métodos permanece o mesmo...
     private void handleModTag(Player player, Clan clan, String[] args) {
         if (args.length < 1) {
             messages.sendMessage(player, "modtag-usage");
@@ -194,7 +191,11 @@ public class ConfigCommand implements SubCommand {
     @Override
     public List<String> onTabComplete(Player player, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("tag", "fee", "banner").stream()
+            List<String> allActions = commandManager.getActionAliasesFor("config", "tag");
+            allActions.addAll(commandManager.getActionAliasesFor("config", "fee"));
+            allActions.addAll(commandManager.getActionAliasesFor("config", "banner"));
+
+            return allActions.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }

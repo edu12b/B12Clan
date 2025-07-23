@@ -30,6 +30,7 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/DeletarCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/AllyChatCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/database/DatabaseManager.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/managers/CommandManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/SubCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/TituloCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/CriarCommand.java

@@ -1,8 +1,8 @@
-// ARQUIVO NOVO
 package com.br.b12clans.commands.subcommands;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.Bukkit;
@@ -18,11 +18,13 @@ public class RivalCommand implements SubCommand {
     private final Main plugin;
     private final ClanManager clanManager;
     private final MessagesManager messages;
+    private final CommandManager commandManager; // <-- Dependência adicionada
 
     public RivalCommand(Main plugin) {
         this.plugin = plugin;
         this.clanManager = plugin.getClanManager();
         this.messages = plugin.getMessagesManager();
+        this.commandManager = plugin.getCommandManager(); // <-- Inicialização
     }
 
     @Override
@@ -46,9 +48,11 @@ public class RivalCommand implements SubCommand {
             messages.sendMessage(player, "rival-usage");
             return;
         }
+
         String action = args[0].toLowerCase();
         String targetTag = args[1];
 
+        // Lógica assíncrona para não travar o servidor
         clanManager.getClanByTagAsync(targetTag).thenAccept(targetClan -> {
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 if (targetClan == null) {
@@ -59,11 +63,14 @@ public class RivalCommand implements SubCommand {
                     messages.sendMessage(player, "cannot-rival-self");
                     return;
                 }
-                if ("add".equals(action)) {
+
+                // ##### LÓGICA ATUALIZADA AQUI #####
+                // Compara a ação do jogador com as listas de aliases do commands.yml
+                if (commandManager.getActionAliasesFor("rival", "add").contains(action)) {
                     plugin.getDatabaseManager().addRivalAsync(sourceClan.getId(), targetClan.getId()).thenRun(() -> {
                         plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "rival-added", "%clan_name%", targetClan.getName()));
                     });
-                } else if ("remove".equals(action)) {
+                } else if (commandManager.getActionAliasesFor("rival", "remove").contains(action)) {
                     plugin.getDatabaseManager().removeRivalAsync(sourceClan.getId(), targetClan.getId()).thenRun(() -> {
                         plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "rival-removed", "%clan_name%", targetClan.getName()));
                     });
@@ -77,7 +84,11 @@ public class RivalCommand implements SubCommand {
     @Override
     public List<String> onTabComplete(Player player, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("add", "remove").stream()
+            // Usa o CommandManager para pegar todos os aliases possíveis para as ações
+            List<String> allActions = commandManager.getActionAliasesFor("rival", "add");
+            allActions.addAll(commandManager.getActionAliasesFor("rival", "remove"));
+
+            return allActions.stream()
                     .filter(s -> s.startsWith(args[0].toLowerCase()))
                     .collect(Collectors.toList());
         }

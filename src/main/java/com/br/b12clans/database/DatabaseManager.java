@@ -3,6 +3,7 @@ package com.br.b12clans.database;
 import com.br.b12clans.Main;
 import com.br.b12clans.models.Clan;
 import com.zaxxer.hikari.HikariConfig;
+import org.bukkit.Location; // <-- IMPORT ADICIONADO
 import com.zaxxer.hikari.HikariDataSource;
 import org.bukkit.configuration.file.FileConfiguration;
 
@@ -1005,7 +1006,6 @@ public class DatabaseManager {
         String sql = "SELECT ally_clan_id FROM b12_clan_allies WHERE clan_id = ?";
         try (Connection conn = getConnection();
              PreparedStatement ps = conn.prepareStatement(sql)) {
-
             ps.setInt(1, clanId);
             try (ResultSet rs = ps.executeQuery()) {
                 while (rs.next()) {
@@ -1175,4 +1175,16 @@ public class DatabaseManager {
     public CompletableFuture<Boolean> removeRivalAsync(int clanId, int rivalClanId) {
         return CompletableFuture.supplyAsync(() -> removeRival(clanId, rivalClanId), plugin.getThreadPool());
     }
+    public CompletableFuture<Boolean> setClanHomeAsync(int clanId, Location loc) {
+        return CompletableFuture.supplyAsync(() -> {
+            if (loc == null) {
+                // Se a localização for nula, significa que queremos limpar a home
+                return clearClanHome(clanId);
+            } else {
+                // Senão, salvamos a nova localização
+                return setClanHome(clanId, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
+            }
+        }, plugin.getThreadPool());
+    }
+
 }

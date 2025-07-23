@@ -12,6 +12,7 @@ import com.br.b12clans.listeners.ChatListener;
 import com.br.b12clans.listeners.KDRListener;
 import com.br.b12clans.listeners.PlayerListener;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.managers.CommandManager; // <-- IMPORT ADICIONADO
 import com.br.b12clans.managers.EconomyManager;
 import com.br.b12clans.placeholders.ClanPlaceholder;
 import com.br.b12clans.utils.MessagesManager;
@@ -28,14 +29,14 @@ public class Main extends JavaPlugin {
     private ClanChatManager clanChatManager;
     private DiscordManager discordManager;
     private EconomyManager economyManager;
-    private ExecutorService threadPool; // <-- ADICIONADO
+    private CommandManager commandManager; // <-- ADICIONADO
+    private ExecutorService threadPool;
 
     @Override
     public void onEnable() {
         saveDefaultConfig();
 
-        // Inicializa o pool de threads para tarefas assíncronas
-        this.threadPool = Executors.newCachedThreadPool(); // <-- ADICIONADO
+        this.threadPool = Executors.newCachedThreadPool();
 
         this.databaseManager = new DatabaseManager(this);
         if (!databaseManager.initialize()) {
@@ -44,7 +45,11 @@ public class Main extends JavaPlugin {
             return;
         }
 
+        // Inicializa os novos managers
         this.messagesManager = new MessagesManager(this);
+        this.commandManager = new CommandManager(this); // <-- ADICIONADO
+
+        // Managers que podem depender dos outros
         this.clanManager = new ClanManager(this);
         this.clanChatManager = new ClanChatManager(this);
         this.discordManager = new DiscordManager(this);
@@ -65,8 +70,7 @@ public class Main extends JavaPlugin {
         if (discordManager != null) {
             discordManager.shutdown();
         }
-        // Desliga o pool de threads de forma segura
-        if (threadPool != null) { // <-- ADICIONADO
+        if (threadPool != null) {
             threadPool.shutdown();
         }
         getLogger().info("B12Clans foi desabilitado!");
@@ -74,8 +78,6 @@ public class Main extends JavaPlugin {
 
     private void registerCommands() {
         ClanCommand clanCommandExecutor = new ClanCommand(this);
-        // Os construtores dos outros comandos podem precisar ser ajustados se eles não estiverem corretos.
-        // Baseado nos arquivos que você enviou, eles parecem estar assim:
         ClanChatCommand clanChatCommand = new ClanChatCommand(this, clanManager, clanChatManager, messagesManager);
         AllyChatCommand allyChatCommand = new AllyChatCommand(this, clanManager, clanChatManager, messagesManager);
         DiscordCommand discordCommand = new DiscordCommand(this, discordManager, messagesManager);
@@ -112,32 +114,13 @@ public class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new KDRListener(this), this);
     }
 
-    public DatabaseManager getDatabaseManager() {
-        return databaseManager;
-    }
-
-    public ClanManager getClanManager() {
-        return clanManager;
-    }
-
-    public MessagesManager getMessagesManager() {
-        return messagesManager;
-    }
-
-    public ClanChatManager getClanChatManager() {
-        return clanChatManager;
-    }
-
-    public DiscordManager getDiscordManager() {
-        return discordManager;
-    }
-
-    public EconomyManager getEconomyManager() {
-        return economyManager;
-    }
-
-    // Getter para o pool de threads
-    public ExecutorService getThreadPool() { // <-- ADICIONADO
-        return threadPool;
-    }
+    // Getters para os managers
+    public DatabaseManager getDatabaseManager() { return databaseManager; }
+    public ClanManager getClanManager() { return clanManager; }
+    public MessagesManager getMessagesManager() { return messagesManager; }
+    public ClanChatManager getClanChatManager() { return clanChatManager; }
+    public DiscordManager getDiscordManager() { return discordManager; }
+    public EconomyManager getEconomyManager() { return economyManager; }
+    public CommandManager getCommandManager() { return commandManager; } // <-- ADICIONADO
+    public ExecutorService getThreadPool() { return threadPool; }
 }
