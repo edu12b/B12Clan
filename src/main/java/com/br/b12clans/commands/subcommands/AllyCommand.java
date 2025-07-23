@@ -28,6 +28,7 @@ public class AllyCommand implements SubCommand {
         this.commandManager = plugin.getCommandManager();
     }
 
+    // ... (getName, getPermission, execute, etc. continuam iguais)
     @Override
     public String getName() {
         return "ally";
@@ -40,8 +41,8 @@ public class AllyCommand implements SubCommand {
 
     @Override
     public void execute(Player player, String[] args) {
-        Clan sourceClan = clanManager.getPlayerClan(player.getUniqueId());
-        if (sourceClan == null) {
+        Clan playerClan = clanManager.getPlayerClan(player.getUniqueId());
+        if (playerClan == null) {
             messages.sendMessage(player, "no-clan");
             return;
         }
@@ -53,7 +54,7 @@ public class AllyCommand implements SubCommand {
 
         String action = args[0].toLowerCase();
 
-        plugin.getDatabaseManager().getMemberRoleAsync(sourceClan.getId(), player.getUniqueId())
+        plugin.getDatabaseManager().getMemberRoleAsync(playerClan.getId(), player.getUniqueId())
                 .thenAccept(role -> {
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
                         if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER"))) {
@@ -69,13 +70,13 @@ public class AllyCommand implements SubCommand {
                         String targetTag = args[1];
 
                         if (commandManager.getActionAliasesFor("ally", "request").contains(action)) {
-                            handleAllyRequest(player, sourceClan, targetTag);
+                            handleAllyRequest(player, playerClan, targetTag);
                         } else if (commandManager.getActionAliasesFor("ally", "accept").contains(action)) {
-                            handleAllyAccept(player, sourceClan, targetTag);
+                            handleAllyAccept(player, playerClan, targetTag);
                         } else if (commandManager.getActionAliasesFor("ally", "deny").contains(action)) {
-                            handleAllyDeny(player, sourceClan, targetTag);
+                            handleAllyDeny(player, playerClan, targetTag);
                         } else if (commandManager.getActionAliasesFor("ally", "remove").contains(action)) {
-                            handleAllyRemove(player, sourceClan, targetTag);
+                            handleAllyRemove(player, playerClan, targetTag);
                         } else {
                             messages.sendMessage(player, "ally-usage-new");
                         }
@@ -83,6 +84,40 @@ public class AllyCommand implements SubCommand {
                 });
     }
 
+    // ##### MÉTODO CORRIGIDO #####
+    private void handleAllyAccept(Player player, Clan acceptorClan, String requesterTag) {
+        Integer requesterClanId = clanManager.getPendingAllianceRequest(acceptorClan.getId());
+        if (requesterClanId == null) {
+            messages.sendMessage(player, "no-pending-ally-request", "%clan_tag%", requesterTag);
+            return;
+        }
+
+        clanManager.getClanById(requesterClanId).thenComposeAsync(requesterClan -> {
+            if (requesterClan == null || !clanManager.getCleanTag(requesterClan.getTag()).equalsIgnoreCase(requesterTag)) {
+                return CompletableFuture.failedFuture(new IllegalAccessException("Pedido inválido"));
+            }
+            // CORREÇÃO: Chamamos addAllyAsync APENAS UMA VEZ, pois ele já adiciona a aliança nos dois sentidos.
+            return plugin.getDatabaseManager().addAllyAsync(requesterClan.getId(), acceptorClan.getId())
+                    .thenApply(success -> {
+                        if (!success) {
+                            throw new RuntimeException("Falha ao adicionar aliança no DB");
+                        }
+                        return requesterClan;
+                    });
+        }, plugin.getThreadPool()).thenAccept(requesterClan -> {
+            plugin.getServer().getScheduler().runTask(plugin, () -> {
+                clanManager.removeAllianceRequest(acceptorClan.getId());
+                messages.sendMessage(player, "ally-request-accepted", "%source_clan%", requesterClan.getName());
+                clanManager.broadcastToClan(acceptorClan, "ally-added", "%target_clan%", requesterClan.getName());
+                clanManager.broadcastToClan(requesterClan, "ally-added", "%target_clan%", acceptorClan.getName());
+            });
+        }).exceptionally(error -> {
+            plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "no-pending-ally-request", "%clan_tag%", requesterTag));
+            return null;
+        });
+    }
+
+    // ... (O resto da classe, como handleAllyRequest, handleAllyDeny, etc., continua o mesmo)
     private void handleAllyRequest(Player player, Clan sourceClan, String targetTag) {
         clanManager.getClanByTagAsync(targetTag).thenAccept(targetClan -> {
             plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -110,34 +145,6 @@ public class AllyCommand implements SubCommand {
             });
         });
     }
-
-    private void handleAllyAccept(Player player, Clan acceptorClan, String requesterTag) {
-        Integer requesterClanId = clanManager.getPendingAllianceRequest(acceptorClan.getId());
-        if (requesterClanId == null) {
-            messages.sendMessage(player, "no-pending-ally-request", "%clan_tag%", requesterTag);
-            return;
-        }
-
-        clanManager.getClanById(requesterClanId).thenComposeAsync(requesterClan -> {
-            if (requesterClan == null || !clanManager.getCleanTag(requesterClan.getTag()).equalsIgnoreCase(requesterTag)) {
-                return CompletableFuture.failedFuture(new IllegalAccessException("Pedido inválido"));
-            }
-            return plugin.getDatabaseManager().addAllyAsync(requesterClan.getId(), acceptorClan.getId())
-                    .thenCompose(v -> plugin.getDatabaseManager().addAllyAsync(acceptorClan.getId(), requesterClan.getId()))
-                    .thenApply(success -> requesterClan);
-        }, plugin.getThreadPool()).thenAccept(requesterClan -> {
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                clanManager.removeAllianceRequest(acceptorClan.getId());
-                messages.sendMessage(player, "ally-request-accepted", "%source_clan%", requesterClan.getName());
-                clanManager.broadcastToClan(acceptorClan, "ally-added", "%target_clan%", requesterClan.getName());
-                clanManager.broadcastToClan(requesterClan, "ally-added", "%target_clan%", acceptorClan.getName());
-            });
-        }).exceptionally(error -> {
-            plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "no-pending-ally-request", "%clan_tag%", requesterTag));
-            return null;
-        });
-    }
-
     private void handleAllyDeny(Player player, Clan acceptorClan, String requesterTag) {
         Integer requesterClanId = clanManager.getPendingAllianceRequest(acceptorClan.getId());
         if (requesterClanId == null) {

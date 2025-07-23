@@ -63,7 +63,7 @@ public class CriarCommand implements SubCommand {
 
         Clan existingClan = clanManager.getPlayerClan(player.getUniqueId());
         if (existingClan != null) {
-            messages.sendMessage(player, "already-in-clan", "%clan_name%", existingClan.getName());
+            messages.sendMessage(player, "already-in-clan", "%target_clan%", existingClan.getName());
             return;
         }
 
