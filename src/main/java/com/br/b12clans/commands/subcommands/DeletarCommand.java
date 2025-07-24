@@ -1,4 +1,3 @@
-// ARQUIVO: src/main/java/com/br/b12clans/commands/subcommands/DeletarCommand.java
 package com.br.b12clans.commands.subcommands;
 
 import com.br.b12clans.Main;
@@ -59,7 +58,9 @@ public class DeletarCommand implements SubCommand {
                 if (success) {
                     // Descarrega o clã da memória para todos os membros online
                     clanManager.unloadClanFromAllMembers(clan);
-                    messages.sendMessage(player, "clan-deleted-success", "target_%clan%", clan.getName());
+
+                    // ##### LINHA CORRIGIDA AQUI #####
+                    messages.sendMessage(player, "clan-deleted-success", "%clan_name%", clan.getName());
 
                     // Lógica do Discord
                     if (plugin.getConfig().getBoolean("discord.enabled", false)) {

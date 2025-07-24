@@ -84,6 +84,7 @@ public class DiscordManager extends ListenerAdapter {
 
             registerSlashCommands();
             loadVerificationData();
+            loadClanThreadData();
 
             plugin.getLogger().info("Bot Discord conectado com sucesso!");
 
@@ -91,6 +92,13 @@ public class DiscordManager extends ListenerAdapter {
             plugin.getLogger().severe("Erro ao inicializar bot Discord: " + e.getMessage());
             e.printStackTrace();
         }
+    }
+    private void loadClanThreadData() {
+        plugin.getDatabaseManager().loadAllClanThreadsAsync().thenAccept(threads -> {
+            clanThreads.clear();
+            clanThreads.putAll(threads);
+            plugin.getLogger().info("Carregados " + threads.size() + " mapeamentos de tópicos de clãs do Discord.");
+        });
     }
 
     private void registerSlashCommands() {
@@ -236,6 +244,8 @@ public class DiscordManager extends ListenerAdapter {
             embedBuilder.setTimestamp(Instant.now());
             embedBuilder.setFooter(embedFooter, null);
             thread.sendMessageEmbeds(embedBuilder.build()).queue();
+            plugin.getDatabaseManager().setClanDiscordThreadIdAsync(clan.getId(), thread.getId());
+            clanThreads.put(clan.getId(), thread.getId());
 
             UUID ownerUuid = clan.getOwnerUuid();
             String ownerDiscordId = verifiedPlayers.get(ownerUuid);

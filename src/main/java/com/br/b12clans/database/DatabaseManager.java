@@ -74,6 +74,7 @@ public class DatabaseManager {
                 "home_pitch FLOAT DEFAULT NULL, " +
                 "fee_amount DECIMAL(10,2) DEFAULT 0.00, " +
                 "banner_data TEXT DEFAULT NULL, " +
+                "discord_thread_id VARCHAR(20) NULL DEFAULT NULL, " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                 "INDEX idx_owner (owner_uuid), " +
                 "INDEX idx_name (name(32)), " +
@@ -86,6 +87,7 @@ public class DatabaseManager {
                 "player_uuid VARCHAR(36) NOT NULL, " +
                 "player_name TEXT NOT NULL, " +
                 "role ENUM('OWNER', 'VICE_LEADER', 'ADMIN', 'MEMBER') DEFAULT 'MEMBER', " +
+                "title VARCHAR(50) NULL DEFAULT NULL, " +
                 "kills INT DEFAULT 0, " +
                 "deaths INT DEFAULT 0, " +
                 "joined_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
@@ -200,6 +202,14 @@ public class DatabaseManager {
                 plugin.getLogger().info("Coluna 'bank_balance' não encontrada na tabela 'b12_clans'. Adicionando...");
                 stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN bank_balance DECIMAL(15,2) DEFAULT 0.00 AFTER description");
                 plugin.getLogger().info("Coluna 'bank_balance' adicionada com sucesso.");
+            }
+            rs.close();
+            rs = meta.getColumns(null, null, "b12_clans", "discord_thread_id");
+            if (!rs.next()) {
+                plugin.getLogger().info("Coluna 'discord_thread_id' não encontrada na tabela 'b12_clans'. Adicionando...");
+                // Adicionamos a coluna após a 'banner_data' para manter a organização
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN discord_thread_id VARCHAR(20) NULL DEFAULT NULL AFTER banner_data");
+                plugin.getLogger().info("Coluna 'discord_thread_id' adicionada com sucesso.");
             }
             rs.close();
 
@@ -902,6 +912,21 @@ public class DatabaseManager {
         }
         return false;
     }
+    public CompletableFuture<Boolean> hasAlliesAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT 1 FROM b12_clan_allies WHERE clan_id = ? LIMIT 1";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, clanId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    return rs.next(); // Retorna true se encontrar pelo menos uma linha
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao verificar se o clã " + clanId + " tem aliados", e);
+            }
+            return false;
+        }, plugin.getThreadPool());
+    }
 
     // ========================================
     // MÉTODOS PARA SISTEMA BANCÁRIO
@@ -1095,6 +1120,39 @@ public class DatabaseManager {
             return tags;
         }, plugin.getThreadPool());
     }
+    // NOVO MÉTODO
+    public CompletableFuture<Void> setClanDiscordThreadIdAsync(int clanId, String threadId) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "UPDATE b12_clans SET discord_thread_id = ? WHERE id = ?";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, threadId);
+                ps.setInt(2, clanId);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao salvar o ID do tópico do Discord para o clã " + clanId, e);
+            }
+        }, plugin.getThreadPool());
+    }
+
+    // NOVO MÉTODO
+    public CompletableFuture<Map<Integer, String>> loadAllClanThreadsAsync() {
+        return CompletableFuture.supplyAsync(() -> {
+            Map<Integer, String> clanThreads = new HashMap<>();
+            String sql = "SELECT id, discord_thread_id FROM b12_clans WHERE discord_thread_id IS NOT NULL";
+            try (Connection conn = getConnection();
+                 PreparedStatement ps = conn.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+
+                while (rs.next()) {
+                    clanThreads.put(rs.getInt("id"), rs.getString("discord_thread_id"));
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao carregar os tópicos do Discord do banco de dados", e);
+            }
+            return clanThreads;
+        }, plugin.getThreadPool());
+    }
     public CompletableFuture<Boolean> areAlliesAsync(int clanId1, int clanId2) {
         return CompletableFuture.supplyAsync(() -> areAllies(clanId1, clanId2), plugin.getThreadPool());
     }
@@ -1132,15 +1190,9 @@ public class DatabaseManager {
     public CompletableFuture<Object[]> getClanHomeAsync(int clanId) {
         return CompletableFuture.supplyAsync(() -> getClanHome(clanId), plugin.getThreadPool());
     }
-
-    // NOVO
-    public CompletableFuture<Boolean> setClanHomeAsync(int clanId, String world, double x, double y, double z, float yaw, float pitch) {
-        return CompletableFuture.supplyAsync(() -> setClanHome(clanId, world, x, y, z, yaw, pitch), plugin.getThreadPool());
-    }
-
     // NOVO
     public CompletableFuture<Boolean> clearClanHomeAsync(int clanId) {
-        return CompletableFuture.supplyAsync(() -> clearClanHome(clanId), plugin.getThreadPool());
+        return setClanHomeAsync(clanId, null);
     }
     // NOVO
     public CompletableFuture<Clan> getClanByTagAsync(String tag) {
@@ -1178,10 +1230,8 @@ public class DatabaseManager {
     public CompletableFuture<Boolean> setClanHomeAsync(int clanId, Location loc) {
         return CompletableFuture.supplyAsync(() -> {
             if (loc == null) {
-                // Se a localização for nula, significa que queremos limpar a home
                 return clearClanHome(clanId);
             } else {
-                // Senão, salvamos a nova localização
                 return setClanHome(clanId, loc.getWorld().getName(), loc.getX(), loc.getY(), loc.getZ(), loc.getYaw(), loc.getPitch());
             }
         }, plugin.getThreadPool());

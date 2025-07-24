@@ -7,7 +7,7 @@
 
 prefix: "&8[&6B12Clans&8]&r "
 
-version: 1.3
+version: 1.6
 
 messages:
   # --- Mensagens Gerais ---
@@ -64,7 +64,7 @@ messages:
   error-joining-clan: "&cOcorreu um erro ao entrar no clã."
 
   # --- Comandos de Saída e Expulsão ---
-  you-left-clan: "&eVocê saiu do clã %target_clan%."
+  you-left-clan: "&eVocê saiu do clã%clan_name%."
   owner-cannot-leave: "&cVocê é o dono do clã! Você não pode sair."
   owner-must-delete: "&cUse /clan deletar para apagar o clã."
   error-leaving-clan: "&cOcorreu um erro ao tentar sair do clã."
@@ -76,13 +76,13 @@ messages:
   cannot-kick-owner: "&cVocê não pode expulsar o dono do clã!"
   player-not-in-your-clan: "&cO jogador %player_name% não faz parte do seu clã."
   kick-success: "&aVocê expulsou %player_name% do clã."
-  you-were-kicked: "&cVocê foi expulso do clã &6%target_clan%&c."
+  you-were-kicked: "&cVocê foi expulso do clã &6%clan_name%&c."
   member-kicked: "&c%player_name% foi expulso do clã por %kicker_name%."
 
   # --- Comando /clan deletar ---
   delete-confirm: "&cAVISO: Para confirmar, use /clan deletar confirm."
   delete-no-permission: "&cVocê precisa ser o Dono para deletar o clã."
-  clan-deleted-success: "&aO clã %target_clan% foi deletado com sucesso."
+  clan-deleted-success: "&aO clã %clan_name% foi deletado com sucesso."
   error-deleting-clan: "&cOcorreu um erro ao deletar o clã."
 
   # --- Comando /clan cargo (Promover/Rebaixar) ---
@@ -155,6 +155,7 @@ messages:
   already-allies: "&cVocê já é aliado do clã %target_clan%."
   rival-added: "&cRivalidade declarada com o clã %target_clan%!"
   rival-removed: "&eRivalidade com o clã %target_clan% foi encerrada."
+  ally-chat-no-allies: "&cSeu clã não tem nenhuma aliança para usar este chat."
 
   # --- Sistema Bancário do Clã ---
   economy-disabled: "&cO sistema de economia não está habilitado neste servidor."
