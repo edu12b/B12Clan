@@ -4,6 +4,7 @@ package com.br.b12clans.commands.subcommands;
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.models.Clan;
+import com.br.b12clans.models.PlayerData;
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
@@ -97,6 +98,13 @@ public class CargoCommand implements SubCommand {
 
                         if (target.isOnline()) {
                             messages.sendMessage(target.getPlayer(), targetMessageKey, "%clan_name%", clan.getName(), "%role%", newRole);
+
+                            // ##### ATUALIZA O CACHE DO JOGADOR ALVO #####
+                            PlayerData targetData = clanManager.getPlayerData(target.getUniqueId());
+                            if (targetData != null) {
+                                targetData.setRole(newRole);
+                            }
+                            // ###########################################
                         }
 
                         clanManager.broadcastToClan(clan, isPromoting ? "member-promoted" : "member-demoted",

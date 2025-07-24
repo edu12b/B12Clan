@@ -27,16 +27,22 @@ public class PlayerListener implements Listener {
 
         // Inicia uma única tarefa assíncrona para lidar com tudo
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            // 1. Atualiza o nome do jogador no banco de dados
+            // 1. Atualiza o nome do jogador no banco de dados (operação rápida)
             plugin.getDatabaseManager().updatePlayerName(player.getUniqueId(), player.getName());
 
             // 2. Carrega os dados do clã do jogador para o cache
             clanManager.loadPlayerClan(player.getUniqueId());
 
-            // 3. NOVO: CARREGA OS DADOS DE KDR PARA O CACHE
-            int[] kdrData = plugin.getDatabaseManager().getPlayerKDR(player.getUniqueId());
-            PlayerData playerData = new PlayerData(kdrData[0], kdrData[1]);
-            clanManager.cachePlayerData(player.getUniqueId(), playerData);
+            // 3. NOVO: CARREGA OS DADOS DE KDR E CARGO PARA O CACHE EM UMA SÓ CHAMADA
+            Object[] data = plugin.getDatabaseManager().getMemberDataForCache(player.getUniqueId());
+            if (data != null) {
+                int kills = (int) data[0];
+                int deaths = (int) data[1];
+                String role = (String) data[2]; // Pode ser null se o jogador não tiver clã
+
+                PlayerData playerData = new PlayerData(kills, deaths, role);
+                clanManager.cachePlayerData(player.getUniqueId(), playerData);
+            }
         });
     }
 

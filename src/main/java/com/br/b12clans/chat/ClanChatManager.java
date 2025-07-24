@@ -87,15 +87,10 @@ public class ClanChatManager {
 
         String formattedMessage = formatAllyMessage(sender, message);
 
-        // Usamos um Set para não ter IDs duplicados
-        Set<Integer> recipientClanIds = new HashSet<>();
-        // Adiciona o próprio clã
-        recipientClanIds.add(senderClan.getId());
-
-        // Busca a lista de aliados no banco de dados e adiciona ao Set
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            List<Integer> allyIds = plugin.getDatabaseManager().getAllAllyIds(senderClan.getId());
-            recipientClanIds.addAll(allyIds);
+        // Usamos o novo método com cache do ClanManager
+        plugin.getClanManager().getClanAlliesAsync(senderClan.getId()).thenAccept(allyIds -> {
+            Set<Integer> recipientClanIds = new HashSet<>(allyIds);
+            recipientClanIds.add(senderClan.getId()); // Adiciona o próprio clã
 
             // Volta para a thread principal para enviar as mensagens
             plugin.getServer().getScheduler().runTask(plugin, () -> {
@@ -111,7 +106,6 @@ public class ClanChatManager {
             });
         });
     }
-
     private String formatClanMessage(Player sender, String message) {
         String format = plugin.getConfig().getString("chat.clan-format", "&8[&6CLÃ&8] &7%player%&8: &f%message%");
         return plugin.getMessagesManager().translateColors(format

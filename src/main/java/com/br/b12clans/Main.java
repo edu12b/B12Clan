@@ -58,6 +58,14 @@ public class Main extends JavaPlugin {
         registerEvents();
         registerPlaceholders();
 
+        // ##### TAREFA DE LIMPEZA AGENDADA #####
+        // Executa a tarefa de limpeza a cada 5 minutos de forma assíncrona.
+        long cleanupInterval = 20 * 60 * 5; // 20 ticks/seg * 60 seg/min * 5 min
+        getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
+            clanManager.cleanupExpiredRequests();
+        }, cleanupInterval, cleanupInterval);
+        // #####################################
+
         getLogger().info("B12Clans foi habilitado com sucesso!");
     }
 
@@ -75,7 +83,6 @@ public class Main extends JavaPlugin {
         getLogger().info("B12Clans foi desabilitado!");
     }
 
-    // ##### MÉTODO ATUALIZADO PARA REGISTRO DINÂMICO #####
     private void registerCommands() {
         // Comando principal /clan
         getCommand("clan").setExecutor(new ClanCommand(this));

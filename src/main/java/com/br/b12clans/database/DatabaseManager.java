@@ -1134,6 +1134,55 @@ public class DatabaseManager {
             }
         }, plugin.getThreadPool());
     }
+    public List<Integer> getAllRivalIds(int clanId) {
+        List<Integer> rivalIds = new ArrayList<>();
+        String sql = "SELECT rival_clan_id FROM b12_clan_rivals WHERE clan_id = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+            ps.setInt(1, clanId);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    rivalIds.add(rs.getInt("rival_clan_id"));
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar rivais do clã " + clanId, e);
+        }
+        return rivalIds;
+    }
+    // ##### NOVO MÉTODO OTIMIZADO #####
+    /**
+     * Busca os dados de um membro (KDR e Cargo) em uma única consulta para o cache.
+     * @param playerUuid O UUID do jogador.
+     * @return Um array de Object contendo [kills, deaths, role], ou null se não for encontrado.
+     */
+    public Object[] getMemberDataForCache(UUID playerUuid) {
+        String sql = "SELECT kills, deaths, role FROM b12_clan_members WHERE player_uuid = ?";
+        try (Connection conn = getConnection();
+             PreparedStatement ps = conn.prepareStatement(sql)) {
+
+            ps.setString(1, playerUuid.toString());
+
+            try (ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    return new Object[]{
+                            rs.getInt("kills"),
+                            rs.getInt("deaths"),
+                            rs.getString("role")
+                    };
+                }
+            }
+        } catch (SQLException e) {
+            plugin.getLogger().log(Level.SEVERE, "Erro ao buscar dados de cache para o jogador " + playerUuid, e);
+        }
+        // Retorna um array padrão se o jogador não for encontrado em nenhum clã
+        return new Object[]{0, 0, null};
+    }
+
+    // E sua contraparte assíncrona
+    public CompletableFuture<List<Integer>> getAllRivalIdsAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> getAllRivalIds(clanId), plugin.getThreadPool());
+    }
 
     // NOVO MÉTODO
     public CompletableFuture<Map<Integer, String>> loadAllClanThreadsAsync() {
@@ -1185,6 +1234,9 @@ public class DatabaseManager {
     // NOVO
     public CompletableFuture<Boolean> updateMemberRoleAsync(int clanId, UUID playerUuid, String newRole) {
         return CompletableFuture.supplyAsync(() -> updateMemberRole(clanId, playerUuid, newRole), plugin.getThreadPool());
+    }
+    public CompletableFuture<List<Integer>> getAllAllyIdsAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> getAllAllyIds(clanId), plugin.getThreadPool());
     }
     // NOVO
     public CompletableFuture<Object[]> getClanHomeAsync(int clanId) {

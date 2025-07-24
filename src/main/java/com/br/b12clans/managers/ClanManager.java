@@ -2,6 +2,7 @@
 package com.br.b12clans.managers;
 
 import com.br.b12clans.Main;
+import com.br.b12clans.database.DatabaseManager;
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.models.PlayerData;
 import com.br.b12clans.utils.MessagesManager;
@@ -11,48 +12,129 @@ import org.bukkit.ChatColor;
 import org.bukkit.entity.Player;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Pattern;
 
 public class ClanManager {
 
     private final Main plugin;
     private final MessagesManager messages;
+    private final DatabaseManager databaseManager; // <-- Adicionado para fácil acesso
     private final Map<UUID, Clan> playerClans;
     private final Map<UUID, PlayerData> playerDataCache;
-    private final Map<UUID, Integer> pendingInvites;
-    private final Map<Integer, Integer> pendingAllianceRequests; // clanId_alvo -> clanId_autor
-    private final Map<UUID, Long> pendingDeletions; // <-- ADICIONE ESTA LINHA
+    private final Map<UUID, PendingRequest> pendingInvites;
+    private final Map<Integer, PendingRequest> pendingAllianceRequests;
+    private final Map<UUID, Long> pendingDeletions;
+
+    // ##### NOVOS CACHES PARA RELACIONAMENTOS #####
+    private final Map<Integer, List<Integer>> allyCache = new ConcurrentHashMap<>();
+    private final Map<Integer, List<Integer>> rivalCache = new ConcurrentHashMap<>();
 
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_&]{1,16}$");
 
+    private static class PendingRequest {
+        final int sourceId;
+        final long timestamp;
+        PendingRequest(int sourceId) {
+            this.sourceId = sourceId;
+            this.timestamp = System.currentTimeMillis();
+        }
+    }
+
     public ClanManager(Main plugin) {
         this.plugin = plugin;
         this.messages = plugin.getMessagesManager();
+        this.databaseManager = plugin.getDatabaseManager(); // <-- Inicialização
         this.playerClans = new ConcurrentHashMap<>();
         this.playerDataCache = new ConcurrentHashMap<>();
         this.pendingInvites = new ConcurrentHashMap<>();
-        this.pendingAllianceRequests = new ConcurrentHashMap<>(); // <-- INICIALIZAÇÃO ADICIONADA
-        this.pendingDeletions = new ConcurrentHashMap<>(); // <-- ADICIONE ESTA LINHA
+        this.pendingAllianceRequests = new ConcurrentHashMap<>();
+        this.pendingDeletions = new ConcurrentHashMap<>();
+    }
 
+    // ##### NOVO MÉTODO PARA INVALIDAR O CACHE #####
+    public void invalidateRelationshipCache(int clanId) {
+        allyCache.remove(clanId);
+        rivalCache.remove(clanId);
+        plugin.getLogger().info("Cache de relacionamento invalidado para o clã ID: " + clanId);
+    }
+
+    // ##### NOVO MÉTODO PARA BUSCAR ALIADOS COM CACHE #####
+    public CompletableFuture<List<Integer>> getClanAlliesAsync(int clanId) {
+        if (allyCache.containsKey(clanId)) {
+            return CompletableFuture.completedFuture(allyCache.get(clanId));
+        }
+        return databaseManager.getAllAllyIdsAsync(clanId).thenApply(allyIds -> {
+            allyCache.put(clanId, allyIds);
+            return allyIds;
+        });
+    }
+
+    // ##### NOVO MÉTODO PARA BUSCAR RIVAIS COM CACHE #####
+    public CompletableFuture<List<Integer>> getClanRivalsAsync(int clanId) {
+        if (rivalCache.containsKey(clanId)) {
+            return CompletableFuture.completedFuture(rivalCache.get(clanId));
+        }
+        return databaseManager.getAllRivalIdsAsync(clanId).thenApply(rivalIds -> {
+            rivalCache.put(clanId, rivalIds);
+            return rivalIds;
+        });
+    }
+
+    public void cleanupExpiredRequests() {
+        // ... (lógica de limpeza da sugestão anterior)
+        long expirationTime = TimeUnit.MINUTES.toMillis(10);
+        long now = System.currentTimeMillis();
+
+        pendingInvites.entrySet().removeIf(entry -> (now - entry.getValue().timestamp) > expirationTime);
+        pendingAllianceRequests.entrySet().removeIf(entry -> (now - entry.getValue().timestamp) > expirationTime);
+    }
+
+    // O restante da classe ClanManager continua igual...
+    // ...
+    // (addInvite, getPendingInvite, etc.)
+    public void addInvite(UUID invitedPlayer, int clanId) {
+        pendingInvites.put(invitedPlayer, new PendingRequest(clanId));
+    }
+
+    public Integer getPendingInvite(UUID invitedPlayer) {
+        PendingRequest request = pendingInvites.get(invitedPlayer);
+        return (request != null) ? request.sourceId : null;
+    }
+
+    public void removeInvite(UUID invitedPlayer) {
+        pendingInvites.remove(invitedPlayer);
+    }
+
+    public void addAllianceRequest(int targetClanId, int sourceClanId) {
+        pendingAllianceRequests.put(targetClanId, new PendingRequest(sourceClanId));
+    }
+
+    public Integer getPendingAllianceRequest(int targetClanId) {
+        PendingRequest request = pendingAllianceRequests.get(targetClanId);
+        return (request != null) ? request.sourceId : null;
+    }
+
+    public void removeAllianceRequest(int targetClanId) {
+        pendingAllianceRequests.remove(targetClanId);
     }
     public void addPendingDeletion(UUID playerUuid) {
-        // Salva o momento exato em que o jogador pediu para deletar
         pendingDeletions.put(playerUuid, System.currentTimeMillis());
     }
 
     public boolean hasPendingDeletion(UUID playerUuid) {
-        // Verifica se o jogador tem um pedido e se não se passaram mais de 30 segundos
         if (!pendingDeletions.containsKey(playerUuid)) {
             return false;
         }
         long timeOfRequest = pendingDeletions.get(playerUuid);
-        return (System.currentTimeMillis() - timeOfRequest) < 30000; // 30 segundos de validade
+        return (System.currentTimeMillis() - timeOfRequest) < 30000;
     }
 
     public void removePendingDeletion(UUID playerUuid) {
@@ -63,39 +145,22 @@ public class ClanManager {
         return playerDataCache.get(playerUuid);
     }
 
-    // Método para SALVAR dados no cache
     public void cachePlayerData(UUID playerUuid, PlayerData data) {
         playerDataCache.put(playerUuid, data);
     }
 
-    // Método para REMOVER dados do cache
     public void uncachePlayerData(UUID playerUuid) {
         playerDataCache.remove(playerUuid);
     }
-
-    // ##### NOVOS MÉTODOS PARA PEDIDOS DE ALIANÇA #####
-    public void addAllianceRequest(int targetClanId, int sourceClanId) {
-        pendingAllianceRequests.put(targetClanId, sourceClanId);
-    }
-
-    public Integer getPendingAllianceRequest(int targetClanId) {
-        return pendingAllianceRequests.get(targetClanId);
-    }
-
-    public void removeAllianceRequest(int targetClanId) {
-        pendingAllianceRequests.remove(targetClanId);
-    }
-    // #################################################
-
     public void broadcastToClan(Clan clan, String messageKey, String... placeholders) {
         if (clan == null) return;
         String rawMessage = messages.getMessage(messageKey, placeholders);
-        String coloredMessage = translateColors(rawMessage); // <-- LINHA ADICIONADA PARA TRADUZIR AS CORES
+        String coloredMessage = translateColors(rawMessage);
 
         for (Player onlinePlayer : Bukkit.getOnlinePlayers()) {
             Clan playerClan = getPlayerClan(onlinePlayer.getUniqueId());
             if (playerClan != null && playerClan.getId() == clan.getId()) {
-                onlinePlayer.sendMessage(coloredMessage); // Envia a mensagem já colorida
+                onlinePlayer.sendMessage(coloredMessage);
             }
         }
     }
@@ -110,24 +175,11 @@ public class ClanManager {
         }
     }
 
-    public void addInvite(UUID invitedPlayer, int clanId) {
-        pendingInvites.put(invitedPlayer, clanId);
-    }
-
-    public Integer getPendingInvite(UUID invitedPlayer) {
-        return pendingInvites.get(invitedPlayer);
-    }
-
-    public void removeInvite(UUID invitedPlayer) {
-        pendingInvites.remove(invitedPlayer);
-    }
-
     public CompletableFuture<Clan> getClanById(int clanId) {
         return CompletableFuture.supplyAsync(() -> plugin.getDatabaseManager().getClanById(clanId), plugin.getThreadPool());
     }
 
     public Clan getClanByTag(String tag) {
-        // Este método busca de forma síncrona, útil em alguns casos específicos
         return plugin.getDatabaseManager().getClanByTag(tag);
     }
 
@@ -216,49 +268,46 @@ public class ClanManager {
         return brackets[0] + smallTag + brackets[1];
     }
     public String getCommandFromAlias(String alias) {
-        // Este é um método simples para ajudar o onTabComplete a saber
-        // se o jogador digitou /clan ally ou /clan rival.
-        // No futuro, isso pode ser melhorado se você adicionar mais aliases.
         if (alias.equalsIgnoreCase("ally")) {
             return "ally";
         }
         if (alias.equalsIgnoreCase("rival")) {
             return "rival";
         }
-        return ""; // Retorna vazio se não for um alias conhecido
+        return "";
     }
     public boolean isTagTooLong(String tag) {
         if (tag == null) return false;
         String expandedTag = translateColors(tag);
-        return expandedTag.length() > 1000; // O limite definido no seu config
+        return expandedTag.length() > 1000;
     }
 
     private String getPlayerRole(UUID playerUuid) {
-        Clan clan = getPlayerClan(playerUuid);
-        if (clan == null) return "MEMBER";
-        if (clan.getOwnerUuid().equals(playerUuid)) return "LEADER";
-
-        // Esta é uma operação de banco de dados, o ideal seria fazê-la de forma assíncrona
-        // Mas para a lógica de cores do placeholder, uma chamada síncrona pode ser aceitável
-        // se não for chamada com muita frequência (ex: a cada mensagem no chat).
-        String dbRole = plugin.getDatabaseManager().getMemberRole(clan.getId(), playerUuid);
-        if ("ADMIN".equalsIgnoreCase(dbRole) || "VICE_LEADER".equalsIgnoreCase(dbRole)) return "LEADER";
-
+        PlayerData data = getPlayerData(playerUuid);
+        // Se o cache existir e tiver um cargo, retorna o cargo.
+        if (data != null && data.getRole() != null) {
+            return data.getRole();
+        }
+        // Se o jogador não tem clã ou o cache ainda não carregou, retorna um valor padrão.
         return "MEMBER";
     }
 
+
     private String[] getBracketsForRole(String role) {
         String leftBracket, rightBracket;
-        switch (role != null ? role.toUpperCase() : "MEMBER") {
-            case "LEADER":
+        // Agora usamos o cargo exato do banco ('OWNER', 'VICE_LEADER', etc.)
+        switch (role.toUpperCase()) {
+            case "OWNER":
+            case "VICE_LEADER":
                 leftBracket = plugin.getConfig().getString("settings.placeholder-colors.leader.left-bracket", "&4[");
                 rightBracket = plugin.getConfig().getString("settings.placeholder-colors.leader.right-bracket", "&4]");
                 break;
-            default:
+            default: // ADMIN e MEMBER cairão aqui
                 leftBracket = plugin.getConfig().getString("settings.placeholder-colors.member.left-bracket", "&7[");
                 rightBracket = plugin.getConfig().getString("settings.placeholder-colors.member.right-bracket", "&7]");
                 break;
         }
+        // O fallback para 'default' é uma boa prática caso algo dê errado.
         if (leftBracket == null || rightBracket == null) {
             leftBracket = plugin.getConfig().getString("settings.placeholder-colors.default.left-bracket", "&8[");
             rightBracket = plugin.getConfig().getString("settings.placeholder-colors.default.right-bracket", "&8]");
