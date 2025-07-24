@@ -12,6 +12,7 @@ import org.bukkit.entity.Player;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture; // <-- IMPORTAÇÃO ADICIONADA
 import java.util.stream.Collectors;
 
 public class TituloCommand implements SubCommand {
@@ -33,7 +34,7 @@ public class TituloCommand implements SubCommand {
 
     @Override
     public String getPermission() {
-        return null; // A permissão é baseada no cargo, verificada internamente
+        return null;
     }
 
     @Override
@@ -49,44 +50,35 @@ public class TituloCommand implements SubCommand {
             return;
         }
 
-        // Verifica o cargo do jogador que está usando o comando
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            String role = plugin.getDatabaseManager().getMemberRole(clan.getId(), player.getUniqueId());
+        OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
+        if (!target.hasPlayedBefore() && !target.isOnline()) {
+            messages.sendMessage(player, "player-not-found", "%player_name%", args[0]);
+            return;
+        }
 
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER") || role.equals("ADMIN"))) {
-                    messages.sendMessage(player, "no-permission-to-set-title");
-                    return;
-                }
+        String title = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : null;
+        if (title != null && title.length() > 50) {
+            messages.sendMessage(player, "title-too-long");
+            return;
+        }
+        String coloredTitle = (title != null) ? clanManager.translateColors(title) : "";
 
-                OfflinePlayer target = Bukkit.getOfflinePlayer(args[0]);
-                if (!target.hasPlayedBefore() && !target.isOnline()) {
-                    messages.sendMessage(player, "player-not-found", "%player_name%", args[0]);
-                    return;
-                }
-
-                // Se args.length > 1, junta o resto para formar o título. Senão, o título é nulo (para remoção).
-                String title = args.length > 1 ? String.join(" ", Arrays.copyOfRange(args, 1, args.length)) : null;
-
-                if (title != null && title.length() > 50) {
-                    messages.sendMessage(player, "title-too-long");
-                    return;
-                }
-
-                String coloredTitle = (title != null) ? clanManager.translateColors(title) : "";
-
-                // Verifica se o alvo é membro do clã e atualiza o título
-                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                    String targetRole = plugin.getDatabaseManager().getMemberRole(clan.getId(), target.getUniqueId());
-                    if (targetRole == null) {
-                        plugin.getServer().getScheduler().runTask(plugin, () -> {
-                            messages.sendMessage(player, "player-not-member", "%player_name%", target.getName());
-                        });
-                        return;
+        plugin.getDatabaseManager().getMemberRoleAsync(clan.getId(), player.getUniqueId())
+                .thenComposeAsync(executorRole -> {
+                    if (executorRole == null || !(executorRole.equals("OWNER") || executorRole.equals("VICE_LEADER") || executorRole.equals("ADMIN"))) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("no-permission-to-set-title"));
                     }
-
-                    boolean success = plugin.getDatabaseManager().updateMemberTitle(clan.getId(), target.getUniqueId(), title);
-
+                    return plugin.getDatabaseManager().getMemberRoleAsync(clan.getId(), target.getUniqueId());
+                }, plugin.getThreadPool())
+                .thenComposeAsync(targetRole -> {
+                    if (targetRole == null) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("player-not-member"));
+                    }
+                    return CompletableFuture.supplyAsync(() ->
+                            plugin.getDatabaseManager().updateMemberTitle(clan.getId(), target.getUniqueId(), title), plugin.getThreadPool()
+                    );
+                }, plugin.getThreadPool())
+                .thenAccept(success -> {
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
                         if (success) {
                             if (title == null || title.isEmpty()) {
@@ -98,9 +90,20 @@ public class TituloCommand implements SubCommand {
                             messages.sendMessage(player, "generic-error");
                         }
                     });
+                })
+                .exceptionally(error -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        String errorMessage = error.getCause().getMessage();
+                        if ("no-permission-to-set-title".equals(errorMessage)) {
+                            messages.sendMessage(player, "no-permission-to-set-title");
+                        } else if ("player-not-member".equals(errorMessage)) {
+                            messages.sendMessage(player, "player-not-member", "%player_name%", target.getName());
+                        } else {
+                            messages.sendMessage(player, "generic-error");
+                        }
+                    });
+                    return null;
                 });
-            });
-        });
     }
 
     @Override
@@ -109,7 +112,6 @@ public class TituloCommand implements SubCommand {
             Clan clan = clanManager.getPlayerClan(player.getUniqueId());
             if (clan == null) return Collections.emptyList();
 
-            // Sugere o nome de membros online do clã
             return Bukkit.getOnlinePlayers().stream()
                     .filter(p -> clan.getId() == (clanManager.getPlayerClan(p.getUniqueId()) != null ? clanManager.getPlayerClan(p.getUniqueId()).getId() : -1))
                     .map(Player::getName)

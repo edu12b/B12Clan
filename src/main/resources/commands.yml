@@ -40,6 +40,9 @@ sub-command-actions:
     fee: ['fee', 'taxa']
     banner: ['banner', 'estandarte']
 
+  delete:
+    confirm: [ 'confirm', 'confirmar' ]
+
   invite:
     add: ['add', 'adicionar']
     accept: ['accept', 'aceitar']

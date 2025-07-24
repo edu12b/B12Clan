@@ -3,6 +3,7 @@ package com.br.b12clans.managers;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.models.Clan;
+import com.br.b12clans.models.PlayerData;
 import com.br.b12clans.utils.MessagesManager;
 import com.br.b12clans.utils.SmallTextConverter;
 import org.bukkit.Bukkit;
@@ -22,8 +23,10 @@ public class ClanManager {
     private final Main plugin;
     private final MessagesManager messages;
     private final Map<UUID, Clan> playerClans;
+    private final Map<UUID, PlayerData> playerDataCache;
     private final Map<UUID, Integer> pendingInvites;
     private final Map<Integer, Integer> pendingAllianceRequests; // clanId_alvo -> clanId_autor
+    private final Map<UUID, Long> pendingDeletions; // <-- ADICIONE ESTA LINHA
 
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_&]{1,16}$");
@@ -32,8 +35,42 @@ public class ClanManager {
         this.plugin = plugin;
         this.messages = plugin.getMessagesManager();
         this.playerClans = new ConcurrentHashMap<>();
+        this.playerDataCache = new ConcurrentHashMap<>();
         this.pendingInvites = new ConcurrentHashMap<>();
         this.pendingAllianceRequests = new ConcurrentHashMap<>(); // <-- INICIALIZAÇÃO ADICIONADA
+        this.pendingDeletions = new ConcurrentHashMap<>(); // <-- ADICIONE ESTA LINHA
+
+    }
+    public void addPendingDeletion(UUID playerUuid) {
+        // Salva o momento exato em que o jogador pediu para deletar
+        pendingDeletions.put(playerUuid, System.currentTimeMillis());
+    }
+
+    public boolean hasPendingDeletion(UUID playerUuid) {
+        // Verifica se o jogador tem um pedido e se não se passaram mais de 30 segundos
+        if (!pendingDeletions.containsKey(playerUuid)) {
+            return false;
+        }
+        long timeOfRequest = pendingDeletions.get(playerUuid);
+        return (System.currentTimeMillis() - timeOfRequest) < 30000; // 30 segundos de validade
+    }
+
+    public void removePendingDeletion(UUID playerUuid) {
+        pendingDeletions.remove(playerUuid);
+    }
+
+    public PlayerData getPlayerData(UUID playerUuid) {
+        return playerDataCache.get(playerUuid);
+    }
+
+    // Método para SALVAR dados no cache
+    public void cachePlayerData(UUID playerUuid, PlayerData data) {
+        playerDataCache.put(playerUuid, data);
+    }
+
+    // Método para REMOVER dados do cache
+    public void uncachePlayerData(UUID playerUuid) {
+        playerDataCache.remove(playerUuid);
     }
 
     // ##### NOVOS MÉTODOS PARA PEDIDOS DE ALIANÇA #####

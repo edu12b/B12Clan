@@ -1,24 +1,31 @@
+// ARQUIVO: src/main/java/com/br/b12clans/commands/subcommands/DeletarCommand.java
+
 package com.br.b12clans.commands.subcommands;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.managers.CommandManager; // <-- IMPORTAÇÃO ADICIONADA
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.entity.Player;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.stream.Collectors; // <-- IMPORTAÇÃO ADICIONADA
 
 public class DeletarCommand implements SubCommand {
 
     private final Main plugin;
     private final ClanManager clanManager;
     private final MessagesManager messages;
+    private final CommandManager commandManager; // <-- DEPENDÊNCIA ADICIONADA
 
     public DeletarCommand(Main plugin) {
         this.plugin = plugin;
         this.clanManager = plugin.getClanManager();
         this.messages = plugin.getMessagesManager();
+        this.commandManager = plugin.getCommandManager(); // <-- INICIALIZAÇÃO
     }
 
     @Override
@@ -28,7 +35,7 @@ public class DeletarCommand implements SubCommand {
 
     @Override
     public String getPermission() {
-        return null; // Apenas o dono pode deletar, verificado internamente.
+        return null;
     }
 
     @Override
@@ -39,43 +46,51 @@ public class DeletarCommand implements SubCommand {
             return;
         }
 
-        // A verificação de cargo e a exclusão são feitas de forma assíncrona
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            String role = plugin.getDatabaseManager().getMemberRole(clan.getId(), player.getUniqueId());
+        // Se o jogador não digitou "confirm" (ou um de seus aliases)
+        if (args.length == 0 || !commandManager.getActionAliasesFor("delete", "confirm").contains(args[0].toLowerCase())) {
+            messages.sendMessage(player, "delete-confirm"); // Envia a mensagem de aviso
+            return;
+        }
 
-            // Apenas o DONO pode deletar o clã
-            if (role == null || !role.equals("OWNER")) {
-                plugin.getServer().getScheduler().runTask(plugin, () -> {
-                    messages.sendMessage(player, "delete-no-permission");
-                });
-                return;
-            }
-
-            // Procede com a exclusão
-            boolean success = plugin.getDatabaseManager().deleteClan(clan.getId());
-
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (success) {
-                    // Descarrega o clã da memória para todos os membros online
-                    clanManager.unloadClanFromAllMembers(clan);
-
-                    // ##### LINHA CORRIGIDA AQUI #####
-                    messages.sendMessage(player, "clan-deleted-success", "%clan_name%", clan.getName());
-
-                    // Lógica do Discord
-                    if (plugin.getConfig().getBoolean("discord.enabled", false)) {
-                        plugin.getDiscordManager().onClanDisbanded(clan);
+        // Se chegou aqui, o jogador digitou "/clan deletar confirm", então prosseguimos.
+        plugin.getDatabaseManager().getMemberRoleAsync(clan.getId(), player.getUniqueId())
+                .thenComposeAsync(role -> {
+                    if (role == null || !role.equals("OWNER")) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("delete-no-permission"));
                     }
-                } else {
-                    messages.sendMessage(player, "error-deleting-clan");
-                }
-            });
-        });
+                    return CompletableFuture.supplyAsync(() ->
+                            plugin.getDatabaseManager().deleteClan(clan.getId()), plugin.getThreadPool()
+                    );
+                }, plugin.getThreadPool())
+                .thenAccept(success -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        if (success) {
+                            clanManager.unloadClanFromAllMembers(clan);
+                            messages.sendMessage(player, "clan-deleted-success", "%clan_name%", clan.getName());
+                            if (plugin.getConfig().getBoolean("discord.enabled", false)) {
+                                plugin.getDiscordManager().onClanDisbanded(clan);
+                            }
+                        } else {
+                            messages.sendMessage(player, "error-deleting-clan");
+                        }
+                    });
+                })
+                .exceptionally(error -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        messages.sendMessage(player, "delete-no-permission");
+                    });
+                    return null;
+                });
     }
 
     @Override
     public List<String> onTabComplete(Player player, String[] args) {
-        // O comando /clan deletar não tem argumentos
+        // Agora o auto-complete vai sugerir "confirm" e "confirmar"
+        if (args.length == 1) {
+            return commandManager.getActionAliasesFor("delete", "confirm").stream()
+                    .filter(s -> s.startsWith(args[0].toLowerCase()))
+                    .collect(Collectors.toList());
+        }
         return Collections.emptyList();
     }
 }

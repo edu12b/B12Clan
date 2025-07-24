@@ -3,6 +3,8 @@ package com.br.b12clans.listeners;
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
 import org.bukkit.entity.Player;
+import com.br.b12clans.models.PlayerData; // <-- IMPORTAÇÃO ADICIONADA
+
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -30,13 +32,20 @@ public class PlayerListener implements Listener {
 
             // 2. Carrega os dados do clã do jogador para o cache
             clanManager.loadPlayerClan(player.getUniqueId());
+
+            // 3. NOVO: CARREGA OS DADOS DE KDR PARA O CACHE
+            int[] kdrData = plugin.getDatabaseManager().getPlayerKDR(player.getUniqueId());
+            PlayerData playerData = new PlayerData(kdrData[0], kdrData[1]);
+            clanManager.cachePlayerData(player.getUniqueId(), playerData);
         });
     }
 
+
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        // Remover dados do cache para economizar memória
+        // Limpar dados do cache para economizar memória
         clanManager.unloadPlayerClan(event.getPlayer().getUniqueId());
+        clanManager.uncachePlayerData(event.getPlayer().getUniqueId()); // <-- LINHA ADICIONADA
 
         // Limpar dados do chat
         plugin.getClanChatManager().handlePlayerLeave(event.getPlayer().getUniqueId());

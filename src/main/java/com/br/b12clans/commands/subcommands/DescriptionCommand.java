@@ -10,6 +10,7 @@ import org.bukkit.entity.Player;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.CompletableFuture; // <-- IMPORTAÇÃO ADICIONADA
 
 public class DescriptionCommand implements SubCommand {
 
@@ -30,7 +31,7 @@ public class DescriptionCommand implements SubCommand {
 
     @Override
     public String getPermission() {
-        return null; // Permissão baseada no cargo, verificada internamente.
+        return null;
     }
 
     @Override
@@ -41,43 +42,47 @@ public class DescriptionCommand implements SubCommand {
             return;
         }
 
-        plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            String role = plugin.getDatabaseManager().getMemberRole(clan.getId(), player.getUniqueId());
+        if (args.length < 1) {
+            messages.sendMessage(player, "description-usage");
+            return;
+        }
+        String description = String.join(" ", args);
+        if (description.length() > 100) {
+            messages.sendMessage(player, "description-too-long");
+            return;
+        }
 
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER"))) {
-                    messages.sendMessage(player, "no-permission-to-set-description");
-                    return;
-                }
+        String coloredDescription = clanManager.translateColors(description);
 
-                if (args.length < 1) {
-                    messages.sendMessage(player, "description-usage");
-                    return;
-                }
-
-                String description = String.join(" ", args);
-                if (description.length() > 100) {
-                    messages.sendMessage(player, "description-too-long");
-                    return;
-                }
-
-                String coloredDescription = clanManager.translateColors(description);
-
-                plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-                    boolean success = plugin.getDatabaseManager().updateClanDescription(clan.getId(), description);
-
+        plugin.getDatabaseManager().getMemberRoleAsync(clan.getId(), player.getUniqueId())
+                .thenComposeAsync(role -> {
+                    if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER"))) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("no-permission-to-set-description"));
+                    }
+                    return CompletableFuture.supplyAsync(() ->
+                            plugin.getDatabaseManager().updateClanDescription(clan.getId(), description), plugin.getThreadPool()
+                    );
+                }, plugin.getThreadPool())
+                .thenAccept(success -> {
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
                         if (success) {
-                            // LINHA CORRIGIDA: Em vez de tentar modificar o objeto, recarregamos os dados.
                             clanManager.loadPlayerClan(player.getUniqueId());
                             messages.sendMessage(player, "description-set-success", "%description%", coloredDescription);
                         } else {
                             messages.sendMessage(player, "generic-error");
                         }
                     });
+                })
+                .exceptionally(error -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        if (error.getCause() instanceof IllegalAccessException) {
+                            messages.sendMessage(player, "no-permission-to-set-description");
+                        } else {
+                            messages.sendMessage(player, "generic-error");
+                        }
+                    });
+                    return null;
                 });
-            });
-        });
     }
 
     @Override

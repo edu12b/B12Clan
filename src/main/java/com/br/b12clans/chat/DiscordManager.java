@@ -3,6 +3,8 @@ package com.br.b12clans.chat;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.models.Clan;
+import java.util.logging.Level;
+import org.bukkit.ChatColor;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -349,22 +351,48 @@ public class DiscordManager extends ListenerAdapter {
     @Override
     public void onSlashCommandInteraction(SlashCommandInteractionEvent event) {
         if (!event.getName().equals("validar")) return;
-        String code = event.getOption("codigo").getAsString();
-        if (verifyPlayer(event.getUser().getId(), code)) {
-            event.reply("✅ Conta verificada com sucesso!").setEphemeral(true).queue();
-        } else {
-            event.reply("❌ Código inválido ou expirado!").setEphemeral(true).queue();
-        }
+
+        // 1. AVISA O DISCORD IMEDIATAMENTE QUE ESTAMOS TRABALHANDO NISSO
+        event.deferReply(true).queue();
+
+        // 2. EXECUTA A LÓGICA LENTA (COM BANCO DE DADOS) EM SEGUNDO PLANO
+        plugin.getThreadPool().submit(() -> {
+            try {
+                String code = event.getOption("codigo").getAsString();
+                boolean success = verifyPlayer(event.getUser().getId(), code);
+
+                // 3. USA O "HOOK" PARA ENVIAR A RESPOSTA FINAL QUANDO TERMINAR
+                String responseMessage = success ? "✅ Conta verificada com sucesso!" : "❌ Código inválido ou expirado!";
+                event.getHook().sendMessage(responseMessage).queue();
+
+            } catch (Exception e) {
+                // Em caso de qualquer erro, avisa o usuário
+                event.getHook().sendMessage("Ocorreu um erro ao processar seu código.").queue();
+                plugin.getLogger().log(Level.SEVERE, "Erro ao processar comando /validar do Discord", e);
+            }
+        });
     }
+
 
     private void sendDiscordMessageToGame(int clanId, String discordName, String message) {
         Clan clan = plugin.getDatabaseManager().getClanById(clanId);
         if (clan == null) return;
+
+        // 1. A mensagem formatada com cores para os jogadores continua a mesma
         String formattedMessage = plugin.getClanManager().translateColors(
-                plugin.getConfig().getString("chat.discord-to-game-format", "&8[&9DISCORD&8] &b%discord_name%&8: &f%message%")
+                plugin.getConfig().getString("chat.discord-to-game-format", "&8[&9DISCORD§8] &b%discord_name%&8: &f%message%")
                         .replace("%discord_name%", discordName)
                         .replace("%message%", message)
         );
+
+        // 2. Lógica de log no console
+        if (plugin.getConfig().getBoolean("discord.log-discord-chat-to-console", true)) {
+            // NOVO: Remove os códigos de cor ANTES de enviar para o console
+            String cleanMessageForConsole = ChatColor.stripColor(formattedMessage);
+            plugin.getLogger().info(cleanMessageForConsole);
+        }
+
+        // 3. Envia a mensagem colorida para os jogadores no jogo
         plugin.getServer().getOnlinePlayers().forEach(player -> {
             Clan playerClan = plugin.getClanManager().getPlayerClan(player.getUniqueId());
             if (playerClan != null && playerClan.getId() == clanId) {

@@ -2,6 +2,7 @@ package com.br.b12clans.placeholders;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.models.PlayerData; // <-- IMPORTAÇÃO ADICIONADA
 import me.clip.placeholderapi.expansion.PlaceholderExpansion;
 import org.bukkit.entity.Player;
 
@@ -41,6 +42,9 @@ public class ClanPlaceholder extends PlaceholderExpansion {
             return "";
         }
 
+        // Pega os dados do jogador diretamente do cache
+        PlayerData cachedData = clanManager.getPlayerData(player.getUniqueId());
+
         switch (params.toLowerCase()) {
             case "tag":
                 return clanManager.getPlayerClanTag(player.getUniqueId());
@@ -56,12 +60,19 @@ public class ClanPlaceholder extends PlaceholderExpansion {
                 return clanManager.formatDisplayName(clanManager.getPlayerClanName(player.getUniqueId()));
             case "has_clan":
                 return clanManager.getPlayerClan(player.getUniqueId()) != null ? "Sim" : "Não";
+
+            // ### LÓGICA MODIFICADA ###
             case "kdr":
-                return getPlayerKDR(player);
+                if (cachedData == null) return "0.00";
+                return String.format("%.2f", cachedData.getKdr()); // Lê do cache
             case "kills":
-                return String.valueOf(getPlayerKills(player));
+                if (cachedData == null) return "0";
+                return String.valueOf(cachedData.getKills()); // Lê do cache
             case "deaths":
-                return String.valueOf(getPlayerDeaths(player));
+                if (cachedData == null) return "0";
+                return String.valueOf(cachedData.getDeaths()); // Lê do cache
+
+            // Estes ainda usam o banco de dados, mas podem ser otimizados depois
             case "description":
                 return getPlayerClanDescription(player);
             case "bank_balance":
@@ -72,28 +83,8 @@ public class ClanPlaceholder extends PlaceholderExpansion {
         }
     }
 
-    private String getPlayerKDR(Player player) {
-        int[] kdr = plugin.getDatabaseManager().getPlayerKDR(player.getUniqueId());
-        int kills = kdr[0];
-        int deaths = kdr[1];
-
-        if (deaths == 0) {
-            return kills > 0 ? String.valueOf(kills) : "0.00";
-        }
-
-        double ratio = (double) kills / deaths;
-        return String.format("%.2f", ratio);
-    }
-
-    private int getPlayerKills(Player player) {
-        int[] kdr = plugin.getDatabaseManager().getPlayerKDR(player.getUniqueId());
-        return kdr[0];
-    }
-
-    private int getPlayerDeaths(Player player) {
-        int[] kdr = plugin.getDatabaseManager().getPlayerKDR(player.getUniqueId());
-        return kdr[1];
-    }
+    // Os métodos getPlayerKDR, getPlayerKills e getPlayerDeaths podem ser REMOVIDOS
+    // pois a lógica deles agora está no cache.
 
     private String getPlayerClanDescription(Player player) {
         com.br.b12clans.models.Clan clan = clanManager.getPlayerClan(player.getUniqueId());

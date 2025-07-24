@@ -97,6 +97,9 @@ discord:
   # Token do bot Discord
   token: "SEU_TOKEN_AQUI"
 
+  # Ativa/Desativa Mensagens do Discord no Console
+  log-discord-chat-to-console: true
+
   # ID do servidor Discord
   guild-id: "SEU_GUILD_ID_AQUI"
 

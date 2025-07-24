@@ -32,6 +32,7 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/database/DatabaseManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/managers/CommandManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/SubCommand.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/models/PlayerData.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/TituloCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/CriarCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/VerCommand.java

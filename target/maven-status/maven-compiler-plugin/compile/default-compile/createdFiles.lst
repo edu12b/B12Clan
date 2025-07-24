@@ -15,6 +15,7 @@ com/br/b12clans/commands/AllyChatCommand.class
 com/br/b12clans/placeholders/ClanPlaceholder.class
 com/br/b12clans/listeners/ChatListener.class
 com/br/b12clans/commands/subcommands/CriarCommand.class
+com/br/b12clans/models/PlayerData.class
 com/br/b12clans/managers/ClanManager.class
 com/br/b12clans/commands/subcommands/AllyCommand.class
 com/br/b12clans/commands/subcommands/DeletarCommand.class
