@@ -14,6 +14,7 @@ import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.managers.EconomyManager;
 import com.br.b12clans.placeholders.ClanPlaceholder;
+import com.br.b12clans.utils.AsyncHandler; // <-- MOVIDO PARA O LUGAR CORRETO
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -32,6 +33,8 @@ public class Main extends JavaPlugin {
     private EconomyManager economyManager;
     private CommandManager commandManager;
     private ExecutorService threadPool;
+    private AsyncHandler asyncHandler;
+    // A LINHA DE IMPORT FOI REMOVIDA DAQUI
 
     @Override
     public void onEnable() {
@@ -48,6 +51,7 @@ public class Main extends JavaPlugin {
 
         this.messagesManager = new MessagesManager(this);
         this.commandManager = new CommandManager(this);
+        this.asyncHandler = new AsyncHandler(this); // <-- Esta linha agora funciona
 
         this.clanManager = new ClanManager(this);
         this.clanChatManager = new ClanChatManager(this);
@@ -59,8 +63,7 @@ public class Main extends JavaPlugin {
         registerPlaceholders();
 
         // ##### TAREFA DE LIMPEZA AGENDADA #####
-        // Executa a tarefa de limpeza a cada 5 minutos de forma assíncrona.
-        long cleanupInterval = 20 * 60 * 5; // 20 ticks/seg * 60 seg/min * 5 min
+        long cleanupInterval = 20 * 60 * 5;
         getServer().getScheduler().runTaskTimerAsynchronously(this, () -> {
             clanManager.cleanupExpiredRequests();
         }, cleanupInterval, cleanupInterval);
@@ -84,18 +87,13 @@ public class Main extends JavaPlugin {
     }
 
     private void registerCommands() {
-        // Comando principal /clan
         getCommand("clan").setExecutor(new ClanCommand(this));
 
-        // Comando de Discord
         DiscordCommand discordCommand = new DiscordCommand(this);
         getCommand("discord").setExecutor(discordCommand);
         getCommand("vincular").setExecutor(discordCommand);
         getCommand("desvincular").setExecutor(discordCommand);
 
-        // --- Registro dinâmico dos comandos de CHAT ---
-
-        // Chat do Clã
         List<String> clanChatAliases = commandManager.getChatCommandAliases("clan-chat");
         if (clanChatAliases != null && !clanChatAliases.isEmpty()) {
             ClanChatCommand clanChatCommand = new ClanChatCommand(this);
@@ -112,7 +110,6 @@ public class Main extends JavaPlugin {
             getLogger().warning("Nenhum alias encontrado para 'clan-chat' no commands.yml!");
         }
 
-        // Chat dos Aliados
         List<String> allyChatAliases = commandManager.getChatCommandAliases("ally-chat");
         if (allyChatAliases != null && !allyChatAliases.isEmpty()) {
             AllyChatCommand allyChatCommand = new AllyChatCommand(this);
@@ -154,4 +151,5 @@ public class Main extends JavaPlugin {
     public EconomyManager getEconomyManager() { return economyManager; }
     public CommandManager getCommandManager() { return commandManager; }
     public ExecutorService getThreadPool() { return threadPool; }
+    public AsyncHandler getAsyncHandler() { return asyncHandler; }
 }

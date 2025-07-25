@@ -379,11 +379,13 @@ public class DiscordManager extends ListenerAdapter {
         if (clan == null) return;
 
         // 1. A mensagem formatada com cores para os jogadores continua a mesma
-        String formattedMessage = plugin.getClanManager().translateColors(
-                plugin.getConfig().getString("chat.discord-to-game-format", "&8[&9DISCORD§8] &b%discord_name%&8: &f%message%")
-                        .replace("%discord_name%", discordName)
-                        .replace("%message%", message)
-        );
+        String format = plugin.getConfig().getString("chat.discord-to-game-format", "&8[&9DISCORD§8] &b%discord_name%&8: &f%message%");
+
+        StringBuilder sb = new StringBuilder(format);
+        replace(sb, "%discord_name%", discordName);
+        replace(sb, "%message%", message);
+
+        String formattedMessage = plugin.getClanManager().translateColors(sb.toString());
 
         // 2. Lógica de log no console
         if (plugin.getConfig().getBoolean("discord.log-discord-chat-to-console", true)) {
@@ -401,6 +403,12 @@ public class DiscordManager extends ListenerAdapter {
                 }
             }
         });
+    }
+    private void replace(StringBuilder sb, String placeholder, String value) {
+        int index;
+        while ((index = sb.indexOf(placeholder)) != -1) {
+            sb.replace(index, index + placeholder.length(), value);
+        }
     }
 
     public boolean isPlayerVerified(UUID playerUuid) {

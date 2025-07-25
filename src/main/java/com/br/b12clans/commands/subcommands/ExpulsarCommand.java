@@ -101,15 +101,8 @@ public class ExpulsarCommand implements SubCommand {
                     });
                 })
                 .exceptionally(error -> {
-                    // Captura qualquer erro que aconteceu na cadeia, incluindo nossa falha de permissão.
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        if (error.getCause() instanceof IllegalAccessException) {
-                            messages.sendMessage(player, "kick-no-permission-hierarchy");
-                        } else {
-                            messages.sendMessage(player, "generic-error");
-                            plugin.getLogger().warning("Erro ao expulsar membro: " + error.getMessage());
-                        }
-                    });
+                    // ##### CÓDIGO ANTIGO REMOVIDO E SUBSTITUÍDO POR UMA ÚNICA LINHA #####
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
                     return null;
                 });
     }

@@ -92,16 +92,8 @@ public class TituloCommand implements SubCommand {
                     });
                 })
                 .exceptionally(error -> {
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        String errorMessage = error.getCause().getMessage();
-                        if ("no-permission-to-set-title".equals(errorMessage)) {
-                            messages.sendMessage(player, "no-permission-to-set-title");
-                        } else if ("player-not-member".equals(errorMessage)) {
-                            messages.sendMessage(player, "player-not-member", "%player_name%", target.getName());
-                        } else {
-                            messages.sendMessage(player, "generic-error");
-                        }
-                    });
+                    // Uma única linha que faz todo o trabalho!
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
                     return null;
                 });
     }

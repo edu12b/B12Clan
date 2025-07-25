@@ -131,7 +131,8 @@ public class ConviteCommand implements SubCommand {
                 clanManager.broadcastToClan(clan, "player-joined-clan-broadcast", "%player_name%", player.getName());
             });
         }).exceptionally(error -> {
-            plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "no-pending-invite"));
+            // Uma única linha que faz todo o trabalho!
+            plugin.getAsyncHandler().handleException(player, error, "generic-error");
             return null;
         });
     }

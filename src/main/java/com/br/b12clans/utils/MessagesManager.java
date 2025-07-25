@@ -54,12 +54,21 @@ public class MessagesManager {
             return ChatColor.RED + "Mensagem não encontrada: " + fullPath;
         }
 
+        // Usamos StringBuilder para evitar criar múltiplos objetos String
+        StringBuilder sb = new StringBuilder(message);
+
         for (int i = 0; i < placeholders.length; i += 2) {
             if (i + 1 < placeholders.length) {
-                message = message.replace(placeholders[i], placeholders[i + 1]);
+                String placeholder = placeholders[i];
+                String value = placeholders[i + 1];
+                int index;
+                // Usamos um loop while para garantir que TODAS as ocorrências do placeholder sejam substituídas
+                while ((index = sb.indexOf(placeholder)) != -1) {
+                    sb.replace(index, index + placeholder.length(), value);
+                }
             }
         }
-        return message;
+        return sb.toString();
     }
 
     public void sendMessage(CommandSender sender, String path, String... placeholders) {

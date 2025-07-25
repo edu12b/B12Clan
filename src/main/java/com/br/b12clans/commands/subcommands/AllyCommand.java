@@ -113,7 +113,8 @@ public class AllyCommand implements SubCommand {
                 clanManager.broadcastToClan(requesterClan, "ally-added", "%target_clan%", acceptorClan.getName());
             });
         }).exceptionally(error -> {
-            plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "no-pending-ally-request", "%clan_tag%", requesterTag));
+            // Uma única linha que faz todo o trabalho!
+            plugin.getAsyncHandler().handleException(player, error, "generic-error");
             return null;
         });
     }
@@ -168,15 +169,15 @@ public class AllyCommand implements SubCommand {
     private void handleAllyRemove(Player player, Clan sourceClan, String targetTag) {
         clanManager.getClanByTagAsync(targetTag).thenComposeAsync(targetClan -> {
             if (targetClan == null) {
-                return CompletableFuture.failedFuture(new IllegalAccessException("Clan não encontrado"));
+                // Lança a exceção com a chave da mensagem para o AsyncHandler capturar
+                return CompletableFuture.failedFuture(new IllegalAccessException("clan-not-found"));
             }
             return plugin.getDatabaseManager().removeAllyAsync(sourceClan.getId(), targetClan.getId())
                     .thenCompose(v -> plugin.getDatabaseManager().removeAllyAsync(targetClan.getId(), sourceClan.getId()))
                     .thenApply(success -> {
-                        // ##### INVALIDA O CACHE DE AMBOS OS CLÃS #####
                         clanManager.invalidateRelationshipCache(sourceClan.getId());
                         clanManager.invalidateRelationshipCache(targetClan.getId());
-                        // #############################################
+
                         return targetClan;
                     });
         }, plugin.getThreadPool()).thenAccept(targetClan -> {
@@ -184,6 +185,9 @@ public class AllyCommand implements SubCommand {
                 messages.sendMessage(player, "ally-removed", "%target_clan%", targetClan.getName());
                 clanManager.broadcastToClan(targetClan, "ally-removed-broadcast", "%source_clan%", sourceClan.getName());
             });
+        }).exceptionally(error -> { // <-- BLOCO ADICIONADO AQUI
+            plugin.getAsyncHandler().handleException(player, error, "generic-error");
+            return null;
         });
     }
 

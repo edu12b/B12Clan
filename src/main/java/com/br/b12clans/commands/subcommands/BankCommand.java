@@ -109,11 +109,8 @@ public class BankCommand implements SubCommand {
                     });
                 })
                 .exceptionally(error -> {
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        economyManager.depositPlayer(player, amount);
-                        messages.sendMessage(player, "bank-database-error");
-                    });
-                    plugin.getLogger().warning("Erro ao depositar no banco: " + error.getMessage());
+                    // Uma única linha que faz todo o trabalho!
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
                     return null;
                 });
     }

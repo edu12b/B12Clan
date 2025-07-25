@@ -108,9 +108,13 @@ public class ClanChatManager {
     }
     private String formatClanMessage(Player sender, String message) {
         String format = plugin.getConfig().getString("chat.clan-format", "&8[&6CLÃ&8] &7%player%&8: &f%message%");
-        return plugin.getMessagesManager().translateColors(format
-                .replace("%player%", sender.getName())
-                .replace("%message%", message));
+
+        StringBuilder sb = new StringBuilder(format);
+
+        replace(sb, "%player%", sender.getName());
+        replace(sb, "%message%", message);
+
+        return plugin.getMessagesManager().translateColors(sb.toString());
     }
 
     private String formatAllyMessage(Player sender, String message) {
@@ -118,10 +122,21 @@ public class ClanChatManager {
         Clan clan = plugin.getClanManager().getPlayerClan(sender.getUniqueId());
         String clanTag = clan != null ? plugin.getClanManager().getCleanTag(clan.getTag()) : "";
 
-        return plugin.getMessagesManager().translateColors(format
-                .replace("%player%", sender.getName())
-                .replace("%clan_tag%", clanTag)
-                .replace("%message%", message));
+        StringBuilder sb = new StringBuilder(format);
+
+        replace(sb, "%player%", sender.getName());
+        replace(sb, "%clan_tag%", clanTag);
+        replace(sb, "%message%", message);
+
+        return plugin.getMessagesManager().translateColors(sb.toString());
+    }
+
+    // Crie este método auxiliar dentro de ClanChatManager para evitar repetição
+    private void replace(StringBuilder sb, String placeholder, String value) {
+        int index;
+        while ((index = sb.indexOf(placeholder)) != -1) {
+            sb.replace(index, index + placeholder.length(), value);
+        }
     }
 
     public void handlePlayerLeave(UUID playerUuid) {

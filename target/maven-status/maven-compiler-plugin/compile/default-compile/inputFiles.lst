@@ -1,4 +1,5 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/ClanCommand.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/utils/AsyncHandler.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/placeholders/ClanPlaceholder.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/HomeCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/InfoCommand.java
@@ -12,9 +13,9 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/Main.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/BankCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/utils/MessagesManager.java
-/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/managers/ClanManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/CargoCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/DescriptionCommand.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/managers/ClanManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/AllyCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/listeners/PlayerListener.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/SairCommand.java
@@ -30,8 +31,8 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/DeletarCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/AllyChatCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/database/DatabaseManager.java
-/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/managers/CommandManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/SubCommand.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/managers/CommandManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/models/PlayerData.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/TituloCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/CriarCommand.java

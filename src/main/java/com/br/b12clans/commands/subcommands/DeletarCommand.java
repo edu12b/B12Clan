@@ -76,9 +76,8 @@ public class DeletarCommand implements SubCommand {
                     });
                 })
                 .exceptionally(error -> {
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        messages.sendMessage(player, "delete-no-permission");
-                    });
+                    // Uma única linha que faz todo o trabalho!
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
                     return null;
                 });
     }

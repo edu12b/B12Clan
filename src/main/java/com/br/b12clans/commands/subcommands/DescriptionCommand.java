@@ -74,13 +74,8 @@ public class DescriptionCommand implements SubCommand {
                     });
                 })
                 .exceptionally(error -> {
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        if (error.getCause() instanceof IllegalAccessException) {
-                            messages.sendMessage(player, "no-permission-to-set-description");
-                        } else {
-                            messages.sendMessage(player, "generic-error");
-                        }
-                    });
+                    // Uma única linha que faz todo o trabalho!
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
                     return null;
                 });
     }

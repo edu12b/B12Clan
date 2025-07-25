@@ -55,11 +55,8 @@ public class KDRCommand implements SubCommand {
                     });
                 })
                 .exceptionally(error -> {
-                    // O tratamento de erro volta para a thread principal para enviar a mensagem
-                    plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        messages.sendMessage(player, "generic-error");
-                    });
-                    plugin.getLogger().warning("Falha ao buscar KDR para " + player.getName() + ": " + error.getMessage());
+                    // Uma única linha que faz todo o trabalho!
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
                     return null;
                 });
     }
