@@ -8,7 +8,6 @@ import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -92,17 +91,22 @@ public class AllyCommand implements SubCommand {
 
         clanManager.getClanById(requesterClanId).thenComposeAsync(requesterClan -> {
             if (requesterClan == null || !clanManager.getCleanTag(requesterClan.getTag()).equalsIgnoreCase(requesterTag)) {
-                return CompletableFuture.failedFuture(new IllegalAccessException("Pedido inválido"));
+                return CompletableFuture.failedFuture(new IllegalAccessException("no-pending-ally-request"));
             }
             return plugin.getDatabaseManager().addAllyAsync(requesterClan.getId(), acceptorClan.getId())
                     .thenApply(success -> {
                         if (!success) {
                             throw new RuntimeException("Falha ao adicionar aliança no DB");
                         }
-                        // ##### INVALIDA O CACHE DE AMBOS OS CLÃS #####
+                        // Invalida o cache antigo
                         clanManager.invalidateRelationshipCache(acceptorClan.getId());
                         clanManager.invalidateRelationshipCache(requesterClan.getId());
-                        // #############################################
+
+                        // ##### CORREÇÃO: RE-AQUECE O CACHE COM A NOVA INFORMAÇÃO #####
+                        clanManager.getClanAlliesAsync(acceptorClan.getId());
+                        clanManager.getClanAlliesAsync(requesterClan.getId());
+                        // ###########################################################
+
                         return requesterClan;
                     });
         }, plugin.getThreadPool()).thenAccept(requesterClan -> {
@@ -113,7 +117,6 @@ public class AllyCommand implements SubCommand {
                 clanManager.broadcastToClan(requesterClan, "ally-added", "%target_clan%", acceptorClan.getName());
             });
         }).exceptionally(error -> {
-            // Uma única linha que faz todo o trabalho!
             plugin.getAsyncHandler().handleException(player, error, "generic-error");
             return null;
         });
@@ -169,14 +172,19 @@ public class AllyCommand implements SubCommand {
     private void handleAllyRemove(Player player, Clan sourceClan, String targetTag) {
         clanManager.getClanByTagAsync(targetTag).thenComposeAsync(targetClan -> {
             if (targetClan == null) {
-                // Lança a exceção com a chave da mensagem para o AsyncHandler capturar
                 return CompletableFuture.failedFuture(new IllegalAccessException("clan-not-found"));
             }
             return plugin.getDatabaseManager().removeAllyAsync(sourceClan.getId(), targetClan.getId())
                     .thenCompose(v -> plugin.getDatabaseManager().removeAllyAsync(targetClan.getId(), sourceClan.getId()))
                     .thenApply(success -> {
+                        // Invalida o cache antigo
                         clanManager.invalidateRelationshipCache(sourceClan.getId());
                         clanManager.invalidateRelationshipCache(targetClan.getId());
+
+                        // ##### CORREÇÃO: RE-AQUECE O CACHE COM A NOVA INFORMAÇÃO #####
+                        clanManager.getClanAlliesAsync(sourceClan.getId());
+                        clanManager.getClanAlliesAsync(targetClan.getId());
+                        // ###########################################################
 
                         return targetClan;
                     });
@@ -185,7 +193,7 @@ public class AllyCommand implements SubCommand {
                 messages.sendMessage(player, "ally-removed", "%target_clan%", targetClan.getName());
                 clanManager.broadcastToClan(targetClan, "ally-removed-broadcast", "%source_clan%", sourceClan.getName());
             });
-        }).exceptionally(error -> { // <-- BLOCO ADICIONADO AQUI
+        }).exceptionally(error -> {
             plugin.getAsyncHandler().handleException(player, error, "generic-error");
             return null;
         });
@@ -205,16 +213,8 @@ public class AllyCommand implements SubCommand {
         }
 
         if (args.length == 2) {
-            Clan playerClan = clanManager.getPlayerClan(player.getUniqueId());
-            if (playerClan == null) return Collections.emptyList();
-
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(p -> clanManager.getPlayerClan(p.getUniqueId()))
-                    .filter(c -> c != null && c.getId() != playerClan.getId())
-                    .map(c -> clanManager.getCleanTag(c.getTag()))
-                    .distinct()
-                    .filter(tag -> tag.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .collect(Collectors.toList());
+            // Lógica de sugestão de tag agora chama o método centralizado no ClanManager
+            return clanManager.getClanTagSuggestions(player, args[1]);
         }
         return Collections.emptyList();
     }

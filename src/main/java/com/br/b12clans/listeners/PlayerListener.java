@@ -2,9 +2,9 @@ package com.br.b12clans.listeners;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.managers.ClanManager;
+import com.br.b12clans.models.Clan;
+import com.br.b12clans.models.PlayerData;
 import org.bukkit.entity.Player;
-import com.br.b12clans.models.PlayerData; // <-- IMPORTAÇÃO ADICIONADA
-
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.player.PlayerJoinEvent;
@@ -15,7 +15,6 @@ public class PlayerListener implements Listener {
     private final Main plugin;
     private final ClanManager clanManager;
 
-    // O construtor volta a receber "Main" para podermos aceder ao Bukkit Scheduler
     public PlayerListener(Main plugin) {
         this.plugin = plugin;
         this.clanManager = plugin.getClanManager();
@@ -25,35 +24,44 @@ public class PlayerListener implements Listener {
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
 
-        // Inicia uma única tarefa assíncrona para lidar com tudo
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
-            // 1. Atualiza o nome do jogador no banco de dados (operação rápida)
             plugin.getDatabaseManager().updatePlayerName(player.getUniqueId(), player.getName());
 
-            // 2. Carrega os dados do clã do jogador para o cache
-            clanManager.loadPlayerClan(player.getUniqueId());
-
-            // 3. NOVO: CARREGA OS DADOS DE KDR E CARGO PARA O CACHE EM UMA SÓ CHAMADA
             Object[] data = plugin.getDatabaseManager().getMemberDataForCache(player.getUniqueId());
             if (data != null) {
-                int kills = (int) data[0];
-                int deaths = (int) data[1];
-                String role = (String) data[2]; // Pode ser null se o jogador não tiver clã
-
-                PlayerData playerData = new PlayerData(kills, deaths, role);
+                PlayerData playerData = new PlayerData((int) data[0], (int) data[1], (String) data[2]);
                 clanManager.cachePlayerData(player.getUniqueId(), playerData);
+            }
+
+            Clan clan = plugin.getDatabaseManager().getClanByPlayer(player.getUniqueId());
+            if (clan != null) {
+                clanManager.cachePlayerClan(player.getUniqueId(), clan);
+                clanManager.isFriendlyFireDisabled(clan.getId());
+                clanManager.getClanAlliesAsync(clan.getId());
             }
         });
     }
 
-
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
-        // Limpar dados do cache para economizar memória
-        clanManager.unloadPlayerClan(event.getPlayer().getUniqueId());
-        clanManager.uncachePlayerData(event.getPlayer().getUniqueId()); // <-- LINHA ADICIONADA
+        Player player = event.getPlayer();
+        Clan clan = clanManager.getPlayerClan(player.getUniqueId());
 
-        // Limpar dados do chat
-        plugin.getClanChatManager().handlePlayerLeave(event.getPlayer().getUniqueId());
+        if (clan != null) {
+            // Lógica corrigida para ser mais segura
+            boolean isLastMemberOnline = plugin.getServer().getOnlinePlayers().stream()
+                    .map(p -> clanManager.getPlayerClan(p.getUniqueId()))
+                    .filter(c -> c != null && c.getId() == clan.getId())
+                    .count() <= 1; // Se só tem 1 ou 0 (o que está saindo), então ele é o último
+
+            if (isLastMemberOnline) {
+                clanManager.invalidateRelationshipCache(clan.getId());
+                clanManager.invalidateFriendlyFireCache(clan.getId());
+            }
+        }
+
+        clanManager.unloadPlayerClan(player.getUniqueId());
+        clanManager.uncachePlayerData(player.getUniqueId());
+        plugin.getClanChatManager().handlePlayerLeave(player.getUniqueId());
     }
 }

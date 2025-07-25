@@ -5,10 +5,8 @@ import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.models.Clan;
 import com.br.b12clans.utils.MessagesManager;
-import org.bukkit.Bukkit;
 import org.bukkit.entity.Player;
 
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -53,36 +51,42 @@ public class RivalCommand implements SubCommand {
         String targetTag = args[1];
 
         clanManager.getClanByTagAsync(targetTag).thenAccept(targetClan -> {
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (targetClan == null) {
-                    messages.sendMessage(player, "clan-not-found", "%tag%", targetTag);
-                    return;
-                }
-                if (targetClan.getId() == sourceClan.getId()) {
-                    messages.sendMessage(player, "cannot-rival-self");
-                    return;
-                }
+            if (targetClan == null) {
+                messages.sendMessage(player, "clan-not-found", "%tag%", targetTag);
+                return;
+            }
+            if (targetClan.getId() == sourceClan.getId()) {
+                messages.sendMessage(player, "cannot-rival-self");
+                return;
+            }
 
-                if (commandManager.getActionAliasesFor("rival", "add").contains(action)) {
-                    plugin.getDatabaseManager().addRivalAsync(sourceClan.getId(), targetClan.getId()).thenRun(() -> {
-                        // ##### INVALIDA O CACHE DE AMBOS OS CLÃS #####
-                        clanManager.invalidateRelationshipCache(sourceClan.getId());
-                        clanManager.invalidateRelationshipCache(targetClan.getId());
-                        // #############################################
-                        plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "rival-added", "%clan_name%", targetClan.getName()));
-                    });
-                } else if (commandManager.getActionAliasesFor("rival", "remove").contains(action)) {
-                    plugin.getDatabaseManager().removeRivalAsync(sourceClan.getId(), targetClan.getId()).thenRun(() -> {
-                        // ##### INVALIDA O CACHE DE AMBOS OS CLÃS #####
-                        clanManager.invalidateRelationshipCache(sourceClan.getId());
-                        clanManager.invalidateRelationshipCache(targetClan.getId());
-                        // #############################################
-                        plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "rival-removed", "%clan_name%", targetClan.getName()));
-                    });
-                } else {
-                    messages.sendMessage(player, "rival-usage");
-                }
-            });
+            if (commandManager.getActionAliasesFor("rival", "add").contains(action)) {
+                plugin.getDatabaseManager().addRivalAsync(sourceClan.getId(), targetClan.getId()).thenRun(() -> {
+                    clanManager.invalidateRelationshipCache(sourceClan.getId());
+                    clanManager.invalidateRelationshipCache(targetClan.getId());
+
+                    // ##### CORREÇÃO: RE-AQUECE O CACHE DE RIVAIS (BOA PRÁTICA) #####
+                    clanManager.getClanRivalsAsync(sourceClan.getId());
+                    clanManager.getClanRivalsAsync(targetClan.getId());
+                    // ############################################################
+
+                    plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "rival-added", "%clan_name%", targetClan.getName()));
+                });
+            } else if (commandManager.getActionAliasesFor("rival", "remove").contains(action)) {
+                plugin.getDatabaseManager().removeRivalAsync(sourceClan.getId(), targetClan.getId()).thenRun(() -> {
+                    clanManager.invalidateRelationshipCache(sourceClan.getId());
+                    clanManager.invalidateRelationshipCache(targetClan.getId());
+
+                    // ##### CORREÇÃO: RE-AQUECE O CACHE DE RIVAIS (BOA PRÁTICA) #####
+                    clanManager.getClanRivalsAsync(sourceClan.getId());
+                    clanManager.getClanRivalsAsync(targetClan.getId());
+                    // ############################################################
+
+                    plugin.getServer().getScheduler().runTask(plugin, () -> messages.sendMessage(player, "rival-removed", "%clan_name%", targetClan.getName()));
+                });
+            } else {
+                messages.sendMessage(player, "rival-usage");
+            }
         });
     }
 
@@ -97,16 +101,8 @@ public class RivalCommand implements SubCommand {
                     .collect(Collectors.toList());
         }
         if (args.length == 2) {
-            Clan playerClan = clanManager.getPlayerClan(player.getUniqueId());
-            if (playerClan == null) return Collections.emptyList();
-
-            return Bukkit.getOnlinePlayers().stream()
-                    .map(p -> clanManager.getPlayerClan(p.getUniqueId()))
-                    .filter(c -> c != null && c.getId() != playerClan.getId())
-                    .map(c -> clanManager.getCleanTag(c.getTag()))
-                    .distinct()
-                    .filter(tag -> tag.toLowerCase().startsWith(args[1].toLowerCase()))
-                    .collect(Collectors.toList());
+            // Lógica de sugestão de tag agora chama o método centralizado no ClanManager
+            return clanManager.getClanTagSuggestions(player, args[1]);
         }
         return Collections.emptyList();
     }

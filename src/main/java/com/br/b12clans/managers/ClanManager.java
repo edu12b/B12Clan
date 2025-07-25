@@ -4,6 +4,7 @@ package com.br.b12clans.managers;
 import com.br.b12clans.Main;
 import com.br.b12clans.database.DatabaseManager;
 import com.br.b12clans.models.Clan;
+import java.util.stream.Collectors;
 import com.br.b12clans.models.PlayerData;
 import com.br.b12clans.utils.MessagesManager;
 import com.br.b12clans.utils.SmallTextConverter;
@@ -57,6 +58,11 @@ public class ClanManager {
     public Boolean isFriendlyFireDisabledFromCache(int clanId) {
         // Retorna o valor do cache se existir, ou null se não estiver no cache.
         return friendlyFireDisabledCache.get(clanId);
+    }
+    public void cachePlayerClan(UUID playerUuid, Clan clan) {
+        if (clan != null) {
+            playerClans.put(playerUuid, clan);
+        }
     }
 
     public List<Integer> getClanAlliesFromCache(int clanId) {
@@ -270,10 +276,8 @@ public class ClanManager {
     public String getPlayerClanTagWithLabels(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
         if (clan == null) return "";
-        String role = getPlayerRole(playerUuid);
-        String[] brackets = getBracketsForRole(role);
         String translatedTag = translateColors(clan.getTag());
-        return brackets[0] + translatedTag + brackets[1];
+        return formatTagWithBrackets(playerUuid, translatedTag); // Chama o método auxiliar
     }
 
     public String getPlayerClanTagSmall(UUID playerUuid) {
@@ -286,12 +290,29 @@ public class ClanManager {
     public String getPlayerClanTagSmallWithLabels(UUID playerUuid) {
         Clan clan = getPlayerClan(playerUuid);
         if (clan == null) return "";
-        String role = getPlayerRole(playerUuid);
-        String[] brackets = getBracketsForRole(role);
         String translatedTag = translateColors(clan.getTag());
         String smallTag = SmallTextConverter.toSmallCapsPreservingColors(translatedTag);
-        return brackets[0] + smallTag + brackets[1];
+        return formatTagWithBrackets(playerUuid, smallTag); // Chama o método auxiliar
     }
+    private String formatTagWithBrackets(UUID playerUuid, String formattedTag) {
+        String role = getPlayerRole(playerUuid);
+        String[] brackets = getBracketsForRole(role);
+        return brackets[0] + formattedTag + brackets[1];
+    }
+
+    public List<String> getClanTagSuggestions(Player player, String currentArg) {
+        Clan playerClan = getPlayerClan(player.getUniqueId());
+        if (playerClan == null) return Collections.emptyList();
+
+        return Bukkit.getOnlinePlayers().stream()
+                .map(p -> getPlayerClan(p.getUniqueId()))
+                .filter(c -> c != null && c.getId() != playerClan.getId())
+                .map(c -> getCleanTag(c.getTag()))
+                .distinct()
+                .filter(tag -> tag.toLowerCase().startsWith(currentArg.toLowerCase()))
+                .collect(Collectors.toList());
+    }
+
     public String getCommandFromAlias(String alias) {
         if (alias.equalsIgnoreCase("ally")) {
             return "ally";
