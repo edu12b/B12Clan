@@ -3,6 +3,8 @@ package com.br.b12clans.chat;
 
 import com.br.b12clans.Main;
 import com.br.b12clans.models.Clan;
+
+import java.util.*;
 import java.util.logging.Level;
 import org.bukkit.ChatColor;
 import net.dv8tion.jda.api.EmbedBuilder;
@@ -22,9 +24,6 @@ import org.bukkit.entity.Player;
 
 import java.awt.Color;
 import java.time.Instant;
-import java.util.Map;
-import java.util.Random;
-import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
@@ -53,6 +52,39 @@ public class DiscordManager extends ListenerAdapter {
         if (plugin.getConfig().getBoolean("discord.enabled", false)) {
             initializeBot();
         }
+    }
+    public void sendAllyMessageToDiscord(Clan sourceClan, String senderName, String message) {
+        // 1. Verifica se a funcionalidade está habilitada no config.yml
+        if (!plugin.getConfig().getBoolean("discord.ally-chat-forwarding.enabled", false)) {
+            return;
+        }
+
+        // 2. Busca a lista de clãs aliados de forma assíncrona usando o cache
+        plugin.getClanManager().getClanAlliesAsync(sourceClan.getId()).thenAccept(allyIds -> {
+            // 3. Cria uma lista de todos os clãs que devem receber a mensagem
+            Set<Integer> recipientClanIds = new HashSet<>(allyIds);
+            recipientClanIds.add(sourceClan.getId()); // Adiciona o próprio clã do remetente
+
+            // 4. Pega o formato da mensagem do config.yml
+            String format = plugin.getConfig().getString("discord.ally-chat-forwarding.format", "🔰 **[ALIANÇA | %source_clan_tag%]** %player_name%: %message%");
+            String cleanSourceTag = plugin.getClanManager().getCleanTag(sourceClan.getTag());
+
+            String formattedMessage = format
+                    .replace("%source_clan_tag%", cleanSourceTag)
+                    .replace("%player_name%", senderName)
+                    .replace("%message%", message);
+
+            // 5. Itera sobre cada clã destinatário e envia a mensagem para o seu tópico
+            for (int clanId : recipientClanIds) {
+                String threadId = clanThreads.get(clanId);
+                if (threadId != null) {
+                    ThreadChannel thread = guild.getThreadChannelById(threadId);
+                    if (thread != null) {
+                        thread.sendMessage(formattedMessage).queue();
+                    }
+                }
+            }
+        });
     }
 
     private void initializeBot() {
@@ -421,6 +453,7 @@ public class DiscordManager extends ListenerAdapter {
         }
         scheduler.shutdown();
     }
+
 
     public boolean unlinkPlayer(UUID playerUuid) {
         boolean removedFromDB = plugin.getDatabaseManager().removeDiscordLink(playerUuid);

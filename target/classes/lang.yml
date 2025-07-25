@@ -7,7 +7,7 @@
 
 prefix: "&8[&6B12Clans&8]&r "
 
-version: 1.6
+version: 1.7
 
 messages:
   # --- Mensagens Gerais ---
@@ -34,6 +34,13 @@ messages:
   tag-too-long: "&cTag muito longa! Máximo: 1000 caracteres com cores."
   tag-already-exists: "&cEssa tag já está sendo usada por outro clã!"
   checking-availability: "&eVerificando disponibilidade..."
+
+  # --- Comando /clan ff ---
+  ff-no-permission: "&cVocê precisa ser o Dono do clã para alterar esta opção."
+  ff-usage: "&cUso: /clan ff <on|off>"
+  ff-enabled: "&aFogo amigo para os membros do clã foi &lATIVADO&a."
+  ff-disabled: "&cFogo amigo para os membros do clã foi &lDESATIVADO&c."
+  ff-status: "&eO status do fogo amigo para o seu clã é: %status%"
 
   # --- Comando /clan info ---
   no-clan: "&cVocê não faz parte de nenhum clã."

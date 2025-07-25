@@ -31,7 +31,9 @@ com/br/b12clans/commands/subcommands/InfoCommand.class
 com/br/b12clans/commands/subcommands/ExpulsarCommand.class
 com/br/b12clans/commands/subcommands/SubCommand.class
 com/br/b12clans/chat/ClanChatManager.class
+com/br/b12clans/commands/subcommands/FriendlyFireCommand.class
 com/br/b12clans/commands/subcommands/AjudaCommand.class
+com/br/b12clans/listeners/FriendlyFireListener.class
 com/br/b12clans/managers/EconomyManager.class
 com/br/b12clans/commands/subcommands/HomeCommand.class
 com/br/b12clans/commands/DiscordCommand.class

@@ -14,6 +14,7 @@ import com.br.b12clans.managers.ClanManager;
 import com.br.b12clans.managers.CommandManager;
 import com.br.b12clans.managers.EconomyManager;
 import com.br.b12clans.placeholders.ClanPlaceholder;
+import com.br.b12clans.listeners.FriendlyFireListener; // <-- ADICIONE O IMPORT
 import com.br.b12clans.utils.AsyncHandler; // <-- MOVIDO PARA O LUGAR CORRETO
 import com.br.b12clans.utils.MessagesManager;
 import org.bukkit.command.PluginCommand;
@@ -140,6 +141,8 @@ public class Main extends JavaPlugin {
         getServer().getPluginManager().registerEvents(new PlayerListener(this), this);
         getServer().getPluginManager().registerEvents(new ChatListener(this), this);
         getServer().getPluginManager().registerEvents(new KDRListener(this), this);
+        getServer().getPluginManager().registerEvents(new FriendlyFireListener(this), this); // <-- ADICIONE ESTA LINHA
+
     }
 
     // Getters para os managers

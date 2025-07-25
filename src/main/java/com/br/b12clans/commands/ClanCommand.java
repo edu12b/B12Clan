@@ -52,6 +52,8 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         commandMap.put("kdr", new KDRCommand(plugin));
         commandMap.put("delete", new DeletarCommand(plugin));
         commandMap.put("bank", new BankCommand(plugin));
+        commandMap.put("friendlyfire", new FriendlyFireCommand(plugin)); // <-- ADICIONE ESTA LINHA
+
 
         // 2. Pega as chaves dos comandos do commands.yml (create, info, ally, etc.)
         Set<String> commandKeys = commandManager.getCommandKeys();

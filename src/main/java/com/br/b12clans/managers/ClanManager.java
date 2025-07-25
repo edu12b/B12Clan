@@ -31,6 +31,8 @@ public class ClanManager {
     private final Map<UUID, PendingRequest> pendingInvites;
     private final Map<Integer, PendingRequest> pendingAllianceRequests;
     private final Map<UUID, Long> pendingDeletions;
+    private final Map<Integer, Boolean> friendlyFireDisabledCache = new ConcurrentHashMap<>();
+
 
     // ##### NOVOS CACHES PARA RELACIONAMENTOS #####
     private final Map<Integer, List<Integer>> allyCache = new ConcurrentHashMap<>();
@@ -38,6 +40,29 @@ public class ClanManager {
 
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-Z0-9_]{2,32}$");
     private static final Pattern TAG_CLEAN_PATTERN = Pattern.compile("^[a-zA-Z0-9\\[\\]\\(\\)-_&]{1,16}$");
+
+    public void invalidateFriendlyFireCache(int clanId) {
+        friendlyFireDisabledCache.remove(clanId);
+    }
+
+    public CompletableFuture<Boolean> isFriendlyFireDisabled(int clanId) {
+        if (friendlyFireDisabledCache.containsKey(clanId)) {
+            return CompletableFuture.completedFuture(friendlyFireDisabledCache.get(clanId));
+        }
+        return databaseManager.isFriendlyFireDisabledAsync(clanId).thenApply(isDisabled -> {
+            friendlyFireDisabledCache.put(clanId, isDisabled);
+            return isDisabled;
+        });
+    }
+    public Boolean isFriendlyFireDisabledFromCache(int clanId) {
+        // Retorna o valor do cache se existir, ou null se não estiver no cache.
+        return friendlyFireDisabledCache.get(clanId);
+    }
+
+    public List<Integer> getClanAlliesFromCache(int clanId) {
+        // Retorna a lista de aliados do cache se existir, ou null.
+        return allyCache.get(clanId);
+    }
 
     private static class PendingRequest {
         final int sourceId;

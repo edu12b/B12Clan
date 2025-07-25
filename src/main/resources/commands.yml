@@ -22,6 +22,7 @@ main-commands:
   kdr: ['kdr']
   delete: ['delete', 'disband', 'deletar']
   bank: ['bank', 'banco']
+  friendlyfire: ['ff', 'fogoamigo', 'friendlyfire']
 
 # Nomes das AÇÕES dentro de cada comando (ex: /clan ally <ação>)
 sub-command-actions:

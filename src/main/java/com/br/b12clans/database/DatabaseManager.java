@@ -75,6 +75,7 @@ public class DatabaseManager {
                 "fee_amount DECIMAL(10,2) DEFAULT 0.00, " +
                 "banner_data TEXT DEFAULT NULL, " +
                 "discord_thread_id VARCHAR(20) NULL DEFAULT NULL, " +
+                "friendly_fire_disabled BOOLEAN DEFAULT FALSE, " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                 "INDEX idx_owner (owner_uuid), " +
                 "INDEX idx_name (name(32)), " +
@@ -213,9 +214,48 @@ public class DatabaseManager {
             }
             rs.close();
 
+            rs = meta.getColumns(null, null, "b12_clans", "friendly_fire_disabled");
+            if (!rs.next()) {
+                plugin.getLogger().info("Coluna 'friendly_fire_disabled' não encontrada. Adicionando...");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN friendly_fire_disabled BOOLEAN DEFAULT FALSE AFTER discord_thread_id");
+                plugin.getLogger().info("Coluna 'friendly_fire_disabled' adicionada com sucesso.");
+            }
+            rs.close();
+
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Erro ao tentar atualizar estruturas das tabelas.", e);
         }
+    }
+
+    public CompletableFuture<Boolean> updateFriendlyFireAsync(int clanId, boolean disabled) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "UPDATE b12_clans SET friendly_fire_disabled = ? WHERE id = ?";
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setBoolean(1, disabled);
+                ps.setInt(2, clanId);
+                return ps.executeUpdate() > 0;
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar status de fogo amigo para o clã " + clanId, e);
+                return false;
+            }
+        }, plugin.getThreadPool());
+    }
+
+    public CompletableFuture<Boolean> isFriendlyFireDisabledAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT friendly_fire_disabled FROM b12_clans WHERE id = ?";
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, clanId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getBoolean("friendly_fire_disabled");
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar status de fogo amigo para o clã " + clanId, e);
+            }
+            return false; // Retorna false por padrão em caso de erro
+        }, plugin.getThreadPool());
     }
 
     public Connection getConnection() throws SQLException {

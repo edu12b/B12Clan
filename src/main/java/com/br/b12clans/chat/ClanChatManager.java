@@ -26,6 +26,7 @@ public class ClanChatManager {
         this.mutedPlayers = ConcurrentHashMap.newKeySet();
     }
 
+
     public enum ChatChannel {
         CLAN, ALLY, NONE
     }
@@ -87,16 +88,19 @@ public class ClanChatManager {
 
         String formattedMessage = formatAllyMessage(sender, message);
 
-        // Usamos o novo método com cache do ClanManager
         plugin.getClanManager().getClanAlliesAsync(senderClan.getId()).thenAccept(allyIds -> {
             Set<Integer> recipientClanIds = new HashSet<>(allyIds);
-            recipientClanIds.add(senderClan.getId()); // Adiciona o próprio clã
+            recipientClanIds.add(senderClan.getId());
 
-            // Volta para a thread principal para enviar as mensagens
+            // --- Lógica de envio para o Discord ---
+            // Aciona o encaminhamento da mensagem para o Discord
+            plugin.getDiscordManager().sendAllyMessageToDiscord(senderClan, sender.getName(), message);
+            // ------------------------------------
+
+            // Volta para a thread principal para enviar as mensagens no jogo
             plugin.getServer().getScheduler().runTask(plugin, () -> {
                 for (Player player : Bukkit.getOnlinePlayers()) {
                     Clan playerClan = plugin.getClanManager().getPlayerClan(player.getUniqueId());
-                    // Verifica se o clã do jogador está na nossa lista de destinatários
                     if (playerClan != null && recipientClanIds.contains(playerClan.getId())) {
                         if (!isMuted(player.getUniqueId())) {
                             player.sendMessage(formattedMessage);

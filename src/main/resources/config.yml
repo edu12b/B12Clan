@@ -54,7 +54,19 @@ settings:
     default:
       left-bracket: "&8["
       right-bracket: "&8]"
+# ========================================
+#           CONTROLE DE FOGO AMIGO
+# ========================================
+friendly-fire:
+  # O fogo amigo vem desativado por padrão quando um clã é criado?
+  # true = PvP LIGADO (pode atacar) | false = PvP DESLIGADO (não pode atacar)
+  disabled-by-default-on-create: false
 
+  # Ativar globalmente a verificação de dano entre membros do mesmo clã?
+  prevent-clan-damage: true
+
+  # Ativar globalmente a verificação de dano entre membros de clãs aliados?
+  prevent-ally-damage: true
 # ========================================
 #           SISTEMA DE PERMISSÕES
 # ========================================
@@ -108,6 +120,11 @@ discord:
 
   # ID do canal para verificação de contas (opcional)
   verification-channel-id: "SEU_CANAL_VERIFICACAO_ID"
+
+  # Chat Aliança
+  ally-chat-forwarding:
+    enabled: true
+    format: "🔰 **[ALIANÇA | %source_clan_tag%]** %player_name%: %message%"
 
   # Configurações do embed inicial
   embed:
