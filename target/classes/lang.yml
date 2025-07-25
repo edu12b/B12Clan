@@ -7,7 +7,7 @@
 
 prefix: "&8[&6B12Clans&8]&r "
 
-version: 1.7
+version: 1.8
 
 messages:
   # --- Mensagens Gerais ---
@@ -41,6 +41,7 @@ messages:
   ff-enabled: "&aFogo amigo para os membros do clã foi &lATIVADO&a."
   ff-disabled: "&cFogo amigo para os membros do clã foi &lDESATIVADO&c."
   ff-status: "&eO status do fogo amigo para o seu clã é: %status%"
+  ff-action-blocked: "&cVocê não pode atacar este jogador! O fogo amigo está desativado."
 
   # --- Comando /clan info ---
   no-clan: "&cVocê não faz parte de nenhum clã."
