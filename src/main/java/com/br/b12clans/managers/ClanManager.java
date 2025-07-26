@@ -34,6 +34,8 @@ public class ClanManager {
     private final Map<UUID, Long> pendingDeletions;
     private final Map<Integer, Boolean> friendlyFireDisabledCache = new ConcurrentHashMap<>();
     private final Map<UUID, Boolean> invitesDisabledCache = new ConcurrentHashMap<>();
+    private final Map<Integer, Boolean> allianceRequestsDisabledCache = new ConcurrentHashMap<>();
+
 
 
 
@@ -46,6 +48,26 @@ public class ClanManager {
 
     public void invalidateFriendlyFireCache(int clanId) {
         friendlyFireDisabledCache.remove(clanId);
+    }
+    public void loadAllianceRequestStatus(int clanId) {
+        plugin.getDatabaseManager().areAllianceRequestsDisabledAsync(clanId).thenAccept(isDisabled -> {
+            allianceRequestsDisabledCache.put(clanId, isDisabled);
+        });
+    }
+
+    public void unloadAllianceRequestStatus(int clanId) {
+        allianceRequestsDisabledCache.remove(clanId);
+    }
+
+    public CompletableFuture<Boolean> areAllianceRequestsDisabledAsync(int clanId) {
+        if (allianceRequestsDisabledCache.containsKey(clanId)) {
+            return CompletableFuture.completedFuture(allianceRequestsDisabledCache.get(clanId));
+        }
+        return plugin.getDatabaseManager().areAllianceRequestsDisabledAsync(clanId)
+                .thenApply(isDisabled -> {
+                    allianceRequestsDisabledCache.put(clanId, isDisabled);
+                    return isDisabled;
+                });
     }
 
     public void loadPlayerInviteStatus(UUID playerUuid) {

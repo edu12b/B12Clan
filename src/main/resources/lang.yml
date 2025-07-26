@@ -7,7 +7,7 @@
 
 prefix: "&8[&6B12Clans&8]&r "
 
-version: 2.0
+version: 2.1
 
 messages:
   # --- Mensagens Gerais ---
@@ -16,6 +16,11 @@ messages:
   generic-error: "&cOcorreu um erro inesperado. Por favor, tente novamente."
   player-not-found: "&cJogador '%player_name%' não encontrado ou não está online."
   clan-not-found: "&cClã com a tag '%tag%' não foi encontrado."
+
+  # --- Comando /clan togglealliance ---
+  alliance-requests-disabled: "&cSeu clã desativou o recebimento de pedidos de aliança."
+  alliance-requests-enabled: "&aSeu clã ativou o recebimento de pedidos de aliança."
+  target-alliance-requests-disabled: "&cO clã %clan_name% não está aceitando pedidos de aliança no momento."
 
   # --- Comando /clan criar ---
   create-usage: "&cUso: /clan criar <nome> <tag>"

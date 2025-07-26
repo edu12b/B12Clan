@@ -4,6 +4,7 @@ com/br/b12clans/commands/subcommands/ConviteCommand.class
 com/br/b12clans/commands/subcommands/ConfigCommand.class
 com/br/b12clans/commands/subcommands/CargoCommand.class
 com/br/b12clans/Main.class
+com/br/b12clans/commands/subcommands/ToggleAllianceCommand.class
 com/br/b12clans/commands/subcommands/DescriptionCommand.class
 com/br/b12clans/utils/MessagesManager.class
 com/br/b12clans/commands/subcommands/VerCommand.class

@@ -9,6 +9,7 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/AjudaCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/chat/DiscordManager.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/RelationsCommand.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/ToggleAllianceCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/FriendlyFireCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/RivalCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/chat/ClanChatManager.java

@@ -54,17 +54,16 @@ public class AllyCommand implements SubCommand {
 
         plugin.getDatabaseManager().getMemberRoleAsync(playerClan.getId(), player.getUniqueId())
                 .thenAccept(role -> {
+                    // A verificação de permissão roda na thread principal para segurança
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
                         if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER"))) {
                             messages.sendMessage(player, "ally-no-permission");
                             return;
                         }
-
                         if (args.length < 2) {
                             messages.sendMessage(player, "ally-usage-new");
                             return;
                         }
-
                         String targetTag = args[1];
 
                         if (commandManager.getActionAliasesFor("ally", "request").contains(action)) {
@@ -98,15 +97,10 @@ public class AllyCommand implements SubCommand {
                         if (!success) {
                             throw new RuntimeException("Falha ao adicionar aliança no DB");
                         }
-                        // Invalida o cache antigo
                         clanManager.invalidateRelationshipCache(acceptorClan.getId());
                         clanManager.invalidateRelationshipCache(requesterClan.getId());
-
-                        // ##### CORREÇÃO: RE-AQUECE O CACHE COM A NOVA INFORMAÇÃO #####
                         clanManager.getClanAlliesAsync(acceptorClan.getId());
                         clanManager.getClanAlliesAsync(requesterClan.getId());
-                        // ###########################################################
-
                         return requesterClan;
                     });
         }, plugin.getThreadPool()).thenAccept(requesterClan -> {
@@ -122,33 +116,71 @@ public class AllyCommand implements SubCommand {
         });
     }
 
+    // ##### MÉTODO CORRIGIDO E REESCRITO #####
     private void handleAllyRequest(Player player, Clan sourceClan, String targetTag) {
-        clanManager.getClanByTagAsync(targetTag).thenAccept(targetClan -> {
-            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                if (targetClan == null) {
-                    messages.sendMessage(player, "clan-not-found", "%tag%", targetTag);
-                    return;
-                }
-                if (targetClan.getId() == sourceClan.getId()) {
-                    messages.sendMessage(player, "cannot-ally-self");
-                    return;
-                }
+        clanManager.getClanByTagAsync(targetTag)
+                .thenComposeAsync(targetClan -> {
+                    if (targetClan == null) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("clan-not-found:" + targetTag));
+                    }
+                    if (targetClan.getId() == sourceClan.getId()) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("cannot-ally-self"));
+                    }
+                    return CompletableFuture.completedFuture(targetClan);
+                }, plugin.getThreadPool())
+                .thenComposeAsync(targetClan ->
+                        clanManager.areAllianceRequestsDisabledAsync(targetClan.getId()).thenApply(isDisabled -> {
+                            if (isDisabled) {
+                                throw new RuntimeException("target-alliance-requests-disabled:" + targetClan.getName());
+                            }
+                            return targetClan;
+                        }), plugin.getThreadPool())
+                .thenComposeAsync(targetClan ->
+                        plugin.getDatabaseManager().areAlliesAsync(sourceClan.getId(), targetClan.getId()).thenApply(areAllies -> {
+                            if (areAllies) {
+                                throw new RuntimeException("already-allies:" + targetClan.getName());
+                            }
+                            return targetClan;
+                        }), plugin.getThreadPool())
+                .thenAccept(targetClan -> {
+                    plugin.getServer().getScheduler().runTask(plugin, () -> {
+                        clanManager.addAllianceRequest(targetClan.getId(), sourceClan.getId());
+                        messages.sendMessage(player, "ally-request-sent", "%target_clan%", targetClan.getName());
+                        clanManager.broadcastToClan(targetClan, "ally-request-received",
+                                "%source_clan%", sourceClan.getName(),
+                                "%source_clan_tag%", clanManager.getCleanTag(sourceClan.getTag()));
+                    });
+                })
+                .exceptionally(error -> {
+                    // ##### LÓGICA CORRIGIDA AQUI #####
+                    String errorMessage = error.getCause().getMessage();
+                    if (errorMessage != null && errorMessage.contains(":")) {
+                        String[] parts = errorMessage.split(":", 2);
+                        String messageKey = parts[0];
+                        String placeholderValue = parts[1];
+                        String placeholder;
 
-                plugin.getDatabaseManager().areAlliesAsync(sourceClan.getId(), targetClan.getId())
-                        .thenAccept(areAllies -> {
-                            plugin.getServer().getScheduler().runTask(plugin, () -> {
-                                if (areAllies) {
-                                    messages.sendMessage(player, "already-allies", "%target_clan%", targetClan.getName());
-                                } else {
-                                    clanManager.addAllianceRequest(targetClan.getId(), sourceClan.getId());
-                                    messages.sendMessage(player, "ally-request-sent", "%target_clan%", targetClan.getName());
-                                    clanManager.broadcastToClan(targetClan, "ally-request-received", "%source_clan%", sourceClan.getName(), "%source_clan_tag%", clanManager.getCleanTag(sourceClan.getTag()));
-                                }
-                            });
-                        });
-            });
-        });
+                        // Agora seleciona o placeholder correto para cada mensagem
+                        switch (messageKey) {
+                            case "clan-not-found":
+                                placeholder = "%tag%";
+                                break;
+                            case "target-alliance-requests-disabled":
+                                placeholder = "%clan_name%"; // <-- A correção principal
+                                break;
+                            default:
+                                placeholder = "%target_clan%";
+                                break;
+                        }
+                        messages.sendMessage(player, messageKey, placeholder, placeholderValue);
+                    } else {
+                        plugin.getAsyncHandler().handleException(player, error, "generic-error");
+                    }
+                    return null;
+                    // #################################
+                });
     }
+
     private void handleAllyDeny(Player player, Clan acceptorClan, String requesterTag) {
         Integer requesterClanId = clanManager.getPendingAllianceRequest(acceptorClan.getId());
         if (requesterClanId == null) {
@@ -177,15 +209,10 @@ public class AllyCommand implements SubCommand {
             return plugin.getDatabaseManager().removeAllyAsync(sourceClan.getId(), targetClan.getId())
                     .thenCompose(v -> plugin.getDatabaseManager().removeAllyAsync(targetClan.getId(), sourceClan.getId()))
                     .thenApply(success -> {
-                        // Invalida o cache antigo
                         clanManager.invalidateRelationshipCache(sourceClan.getId());
                         clanManager.invalidateRelationshipCache(targetClan.getId());
-
-                        // ##### CORREÇÃO: RE-AQUECE O CACHE COM A NOVA INFORMAÇÃO #####
                         clanManager.getClanAlliesAsync(sourceClan.getId());
                         clanManager.getClanAlliesAsync(targetClan.getId());
-                        // ###########################################################
-
                         return targetClan;
                     });
         }, plugin.getThreadPool()).thenAccept(targetClan -> {
@@ -213,7 +240,6 @@ public class AllyCommand implements SubCommand {
         }
 
         if (args.length == 2) {
-            // Lógica de sugestão de tag agora chama o método centralizado no ClanManager
             return clanManager.getClanTagSuggestions(player, args[1]);
         }
         return Collections.emptyList();

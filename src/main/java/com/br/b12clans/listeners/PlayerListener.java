@@ -39,6 +39,7 @@ public class PlayerListener implements Listener {
                 clanManager.cachePlayerClan(player.getUniqueId(), clan);
                 clanManager.isFriendlyFireDisabled(clan.getId());
                 clanManager.getClanAlliesAsync(clan.getId());
+                clanManager.loadAllianceRequestStatus(clan.getId());
             }
         });
     }
@@ -59,6 +60,7 @@ public class PlayerListener implements Listener {
             if (isLastMemberOnline) {
                 clanManager.invalidateRelationshipCache(clan.getId());
                 clanManager.invalidateFriendlyFireCache(clan.getId());
+                clanManager.unloadAllianceRequestStatus(clan.getId());
             }
         }
 

@@ -102,6 +102,7 @@ public class DatabaseManager {
                 "banner_data TEXT DEFAULT NULL, " +
                 "discord_thread_id VARCHAR(20) NULL DEFAULT NULL, " +
                 "friendly_fire_disabled BOOLEAN DEFAULT FALSE, " +
+                "alliance_requests_disabled BOOLEAN DEFAULT FALSE, " +
                 "created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP, " +
                 "INDEX idx_owner (owner_uuid), " +
                 "INDEX idx_name (name(32)), " +
@@ -189,7 +190,13 @@ public class DatabaseManager {
                 stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN friendly_fire_disabled BOOLEAN DEFAULT FALSE AFTER discord_thread_id");
             }
             rs.close();
-            // Adicione outras verificações de 'ALTER TABLE' aqui para futuras atualizações
+            rs = meta.getColumns(null, null, "b12_clans", "alliance_requests_disabled");
+            if (!rs.next()) {
+                plugin.getLogger().info("Coluna 'alliance_requests_disabled' não encontrada. Adicionando...");
+                stmt.executeUpdate("ALTER TABLE b12_clans ADD COLUMN alliance_requests_disabled BOOLEAN DEFAULT FALSE AFTER friendly_fire_disabled");
+                plugin.getLogger().info("Coluna 'alliance_requests_disabled' adicionada com sucesso.");
+            }
+            rs.close();
         } catch (SQLException e) {
             plugin.getLogger().log(Level.SEVERE, "Erro ao tentar atualizar estruturas das tabelas.", e);
         }
@@ -231,6 +238,36 @@ public class DatabaseManager {
             return false;
         }
     }
+    public CompletableFuture<Void> setAllianceRequestsDisabledAsync(int clanId, boolean disabled) {
+        return CompletableFuture.runAsync(() -> {
+            String sql = "UPDATE b12_clans SET alliance_requests_disabled = ? WHERE id = ?";
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setBoolean(1, disabled);
+                ps.setInt(2, clanId);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar status de pedidos de aliança para o clã " + clanId, e);
+            }
+        }, plugin.getThreadPool());
+    }
+
+    public CompletableFuture<Boolean> areAllianceRequestsDisabledAsync(int clanId) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT alliance_requests_disabled FROM b12_clans WHERE id = ?";
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, clanId);
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getBoolean("alliance_requests_disabled");
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar status de pedidos de aliança para o clã " + clanId, e);
+            }
+            return false; // Por padrão, pedidos são ativados
+        }, plugin.getThreadPool());
+    }
+
     public CompletableFuture<Void> setPlayerInvitesDisabledAsync(UUID playerUuid, boolean disabled) {
         return CompletableFuture.runAsync(() -> {
             // Este comando insere ou atualiza o status do jogador de forma eficiente.

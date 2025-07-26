@@ -55,6 +55,7 @@ public class ClanCommand implements CommandExecutor, TabCompleter {
         commandMap.put("friendlyfire", new FriendlyFireCommand(plugin));
         commandMap.put("relations", new RelationsCommand(plugin));
         commandMap.put("toggleinvite", new ToggleInviteCommand(plugin));
+        commandMap.put("togglealliance", new ToggleAllianceCommand(plugin));
 
 
         // 2. Pega as chaves dos comandos do commands.yml (create, info, ally, etc.)

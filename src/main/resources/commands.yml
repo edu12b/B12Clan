@@ -25,6 +25,7 @@ main-commands:
   friendlyfire: ['ff', 'fogoamigo', 'friendlyfire']
   relations: ['relations', 'relacionamentos']
   toggleinvite: ['toggleinvite', 'convites']
+  togglealliance: ['togglealliance', 'aliancas']
 
 
 # Nomes das AÇÕES dentro de cada comando (ex: /clan ally <ação>)
