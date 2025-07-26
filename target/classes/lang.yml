@@ -7,7 +7,7 @@
 
 prefix: "&8[&6B12Clans&8]&r "
 
-version: 1.8
+version: 2.0
 
 messages:
   # --- Mensagens Gerais ---
@@ -34,6 +34,22 @@ messages:
   tag-too-long: "&cTag muito longa! Máximo: 1000 caracteres com cores."
   tag-already-exists: "&cEssa tag já está sendo usada por outro clã!"
   checking-availability: "&eVerificando disponibilidade..."
+
+  # --- Comando /clan relations ---
+  relations-usage: "&cUso: /clan relations [allies|rivals]"
+  no-relations: "&cSeu clã não possui alianças ou rivalidades."
+  no-allies: "&cSeu clã não possui nenhuma aliança no momento."
+  no-rivals: "&cSeu clã não possui nenhuma rivalidade no momento."
+  relations-header: "&6&l=== RELAÇÕES DO CLÃ ==="
+  relations-allies-header: "&a&lAlianças (%count%):"
+  relations-rivals-header: "&c&lRivalidades (%count%):"
+  relations-line: "&e- &f%clan_name% &7(%clan_tag%)"
+  relations-footer: "&6&l=========================="
+
+  # --- Comando /clan toggleinvite ---
+  invites-disabled: "&cVocê desativou o recebimento de convites de clã."
+  invites-enabled: "&aVocê ativou o recebimento de convites de clã."
+  target-invites-disabled: "&cO jogador %player_name% não está aceitando convites de clã no momento."
 
   # --- Comando /clan ff ---
   ff-no-permission: "&cVocê precisa ser o Dono do clã para alterar esta opção."

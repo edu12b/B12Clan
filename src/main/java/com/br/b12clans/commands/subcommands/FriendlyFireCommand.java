@@ -48,10 +48,11 @@ public class FriendlyFireCommand implements SubCommand {
                     }
 
                     if (args.length == 0) {
+                        // A lógica para /clan ff (ver status) permanece a mesma
                         return clanManager.isFriendlyFireDisabled(clan.getId()).thenAccept(isDisabled -> {
                             String status = isDisabled ? "&cDESATIVADO" : "&aATIVADO";
                             messages.sendMessage(player, "ff-status", "%status%", status);
-                        });
+                        }).thenApply(v -> true); // Apenas para satisfazer o tipo de retorno
                     }
 
                     String action = args[0].toLowerCase();
@@ -65,15 +66,20 @@ public class FriendlyFireCommand implements SubCommand {
                         return CompletableFuture.failedFuture(new IllegalAccessException("ff-usage"));
                     }
 
+                    // ##### LÓGICA CORRIGIDA AQUI #####
                     return plugin.getDatabaseManager().updateFriendlyFireAsync(clan.getId(), shouldBeDisabled)
-                            .thenAccept(success -> {
+                            .thenApply(success -> {
                                 if (success) {
-                                    clanManager.invalidateFriendlyFireCache(clan.getId());
+                                    // ATUALIZA O CACHE COM O NOVO VALOR em vez de apenas invalidar
+                                    clanManager.updateFriendlyFireCache(clan.getId(), shouldBeDisabled);
                                     messages.sendMessage(player, shouldBeDisabled ? "ff-disabled" : "ff-enabled");
                                 } else {
                                     messages.sendMessage(player, "generic-error");
                                 }
+                                return success; // Retorna o status do sucesso
                             });
+                    // #################################
+
                 }, plugin.getThreadPool())
                 .exceptionally(error -> {
                     plugin.getAsyncHandler().handleException(player, error, "generic-error");

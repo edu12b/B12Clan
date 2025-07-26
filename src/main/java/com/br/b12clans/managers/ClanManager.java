@@ -33,6 +33,8 @@ public class ClanManager {
     private final Map<Integer, PendingRequest> pendingAllianceRequests;
     private final Map<UUID, Long> pendingDeletions;
     private final Map<Integer, Boolean> friendlyFireDisabledCache = new ConcurrentHashMap<>();
+    private final Map<UUID, Boolean> invitesDisabledCache = new ConcurrentHashMap<>();
+
 
 
     // ##### NOVOS CACHES PARA RELACIONAMENTOS #####
@@ -44,6 +46,36 @@ public class ClanManager {
 
     public void invalidateFriendlyFireCache(int clanId) {
         friendlyFireDisabledCache.remove(clanId);
+    }
+
+    public void loadPlayerInviteStatus(UUID playerUuid) {
+        plugin.getDatabaseManager().isPlayerInvitesDisabledAsync(playerUuid).thenAccept(isDisabled -> {
+            invitesDisabledCache.put(playerUuid, isDisabled);
+        });
+    }
+
+    public void unloadPlayerInviteStatus(UUID playerUuid) {
+        invitesDisabledCache.remove(playerUuid);
+    }
+
+    public boolean isInvitesDisabledFromCache(UUID playerUuid) {
+        return invitesDisabledCache.getOrDefault(playerUuid, false);
+    }
+    public CompletableFuture<Boolean> isInvitesDisabledAsync(UUID playerUuid) {
+        // Se a informação já estiver no cache, retorna imediatamente.
+        if (invitesDisabledCache.containsKey(playerUuid)) {
+            return CompletableFuture.completedFuture(invitesDisabledCache.get(playerUuid));
+        }
+        // Se não, busca no banco de dados, salva no cache e então retorna.
+        return plugin.getDatabaseManager().isPlayerInvitesDisabledAsync(playerUuid)
+                .thenApply(isDisabled -> {
+                    invitesDisabledCache.put(playerUuid, isDisabled);
+                    return isDisabled;
+                });
+    }
+
+    public void updateFriendlyFireCache(int clanId, boolean isDisabled) {
+        friendlyFireDisabledCache.put(clanId, isDisabled);
     }
 
     public CompletableFuture<Boolean> isFriendlyFireDisabled(int clanId) {

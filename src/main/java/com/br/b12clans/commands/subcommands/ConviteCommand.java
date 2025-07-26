@@ -60,7 +60,7 @@ public class ConviteCommand implements SubCommand {
 
     private void handleAdd(Player player, String[] args) {
         if (args.length < 2) {
-            messages.sendMessage(player, "convite-usage"); // Ajustar para uma mensagem mais específica
+            messages.sendMessage(player, "convite-usage");
             return;
         }
         Clan clan = clanManager.getPlayerClan(player.getUniqueId());
@@ -69,32 +69,48 @@ public class ConviteCommand implements SubCommand {
             return;
         }
 
+        Player target = Bukkit.getPlayer(args[1]);
+        if (target == null) {
+            messages.sendMessage(player, "player-not-found", "%player_name%", args[1]);
+            return;
+        }
+        if (target.getUniqueId().equals(player.getUniqueId())) {
+            messages.sendMessage(player, "cannot-invite-self");
+            return;
+        }
+        if (clanManager.getPlayerClan(target.getUniqueId()) != null) {
+            messages.sendMessage(player, "target-already-in-clan", "%player_name%", target.getName());
+            return;
+        }
+
+        // Inicia a cadeia de verificações assíncronas
         plugin.getDatabaseManager().getMemberRoleAsync(clan.getId(), player.getUniqueId())
-                .thenAccept(role -> {
+                .thenComposeAsync(role -> {
+                    if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER") || role.equals("ADMIN"))) {
+                        return CompletableFuture.failedFuture(new IllegalAccessException("invite-no-permission"));
+                    }
+                    // A seguir, verifica a configuração de convites do jogador alvo
+                    return clanManager.isInvitesDisabledAsync(target.getUniqueId());
+                }, plugin.getThreadPool())
+                .thenAccept(targetIsDisabled -> {
+                    // Se chegou aqui, as verificações passaram. Agora age na thread principal.
                     plugin.getServer().getScheduler().runTask(plugin, () -> {
-                        if (role == null || !(role.equals("OWNER") || role.equals("VICE_LEADER") || role.equals("ADMIN"))) {
-                            messages.sendMessage(player, "invite-no-permission");
+                        if (targetIsDisabled) {
+                            messages.sendMessage(player, "target-invites-disabled", "%player_name%", target.getName());
                             return;
                         }
-                        Player target = Bukkit.getPlayer(args[1]);
-                        if (target == null) {
-                            messages.sendMessage(player, "player-not-found", "%player_name%", args[1]);
-                            return;
-                        }
-                        if (target.getUniqueId().equals(player.getUniqueId())) {
-                            messages.sendMessage(player, "cannot-invite-self");
-                            return;
-                        }
-                        if (clanManager.getPlayerClan(target.getUniqueId()) != null) {
-                            messages.sendMessage(player, "target-already-in-clan", "%player_name%", target.getName());
-                            return;
-                        }
+
+                        // Se o alvo não desativou os convites, envia o convite.
                         clanManager.addInvite(target.getUniqueId(), clan.getId());
                         messages.sendMessage(player, "invite-sent", "%player_name%", target.getName());
                         messages.sendMessage(target, "invite-received",
                                 "%source_clan%", clan.getName(),
                                 "%source_clan_tag%", clanManager.getCleanTag(clan.getTag()));
                     });
+                })
+                .exceptionally(error -> {
+                    plugin.getAsyncHandler().handleException(player, error, "generic-error");
+                    return null;
                 });
     }
 

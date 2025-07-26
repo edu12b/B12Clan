@@ -23,6 +23,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent event) {
         Player player = event.getPlayer();
+        clanManager.loadPlayerInviteStatus(player.getUniqueId());
 
         plugin.getServer().getScheduler().runTaskAsynchronously(plugin, () -> {
             plugin.getDatabaseManager().updatePlayerName(player.getUniqueId(), player.getName());
@@ -45,6 +46,7 @@ public class PlayerListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent event) {
         Player player = event.getPlayer();
+        clanManager.unloadPlayerInviteStatus(player.getUniqueId());
         Clan clan = clanManager.getPlayerClan(player.getUniqueId());
 
         if (clan != null) {

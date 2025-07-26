@@ -23,6 +23,9 @@ main-commands:
   delete: ['delete', 'disband', 'deletar']
   bank: ['bank', 'banco']
   friendlyfire: ['ff', 'fogoamigo', 'friendlyfire']
+  relations: ['relations', 'relacionamentos']
+  toggleinvite: ['toggleinvite', 'convites']
+
 
 # Nomes das AÇÕES dentro de cada comando (ex: /clan ally <ação>)
 sub-command-actions:
@@ -57,6 +60,10 @@ sub-command-actions:
     deposit: ['deposit', 'depositar']
     withdraw: ['withdraw', 'sacar']
     balance: ['balance', 'saldo']
+
+  relations:
+    allies: [ 'allies', 'aliados' ]
+    rivals: [ 'rivals', 'rivais' ]
 
 # ========================================
 # COMANDOS DE CHAT

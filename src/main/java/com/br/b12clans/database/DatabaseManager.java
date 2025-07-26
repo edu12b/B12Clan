@@ -124,6 +124,11 @@ public class DatabaseManager {
                 "INDEX idx_clan (clan_id)" +
                 ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
 
+        String createPlayerSettingsTable = "CREATE TABLE IF NOT EXISTS b12_player_settings (" +
+                "player_uuid VARCHAR(36) NOT NULL PRIMARY KEY, " +
+                "invites_disabled BOOLEAN DEFAULT FALSE" +
+                ") ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;";
+
         String createDiscordLinksTable = "CREATE TABLE IF NOT EXISTS b12_discord_links (" +
                 "id INT AUTO_INCREMENT PRIMARY KEY, " +
                 "player_uuid VARCHAR(36) NOT NULL UNIQUE, " +
@@ -163,6 +168,7 @@ public class DatabaseManager {
             stmt.execute(createDiscordLinksTable);
             stmt.execute(createAlliesTable);
             stmt.execute(createRivalsTable);
+            stmt.execute(createPlayerSettingsTable);
             plugin.getLogger().info("Tabelas do B12Clans verificadas/criadas com sucesso.");
         }
     }
@@ -224,6 +230,36 @@ public class DatabaseManager {
             plugin.getLogger().log(Level.SEVERE, "Erro ao criar clã em transação", e);
             return false;
         }
+    }
+    public CompletableFuture<Void> setPlayerInvitesDisabledAsync(UUID playerUuid, boolean disabled) {
+        return CompletableFuture.runAsync(() -> {
+            // Este comando insere ou atualiza o status do jogador de forma eficiente.
+            String sql = "INSERT INTO b12_player_settings (player_uuid, invites_disabled) VALUES (?, ?) ON DUPLICATE KEY UPDATE invites_disabled = VALUES(invites_disabled)";
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, playerUuid.toString());
+                ps.setBoolean(2, disabled);
+                ps.executeUpdate();
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao atualizar status de convite para " + playerUuid, e);
+            }
+        }, plugin.getThreadPool());
+    }
+
+    public CompletableFuture<Boolean> isPlayerInvitesDisabledAsync(UUID playerUuid) {
+        return CompletableFuture.supplyAsync(() -> {
+            String sql = "SELECT invites_disabled FROM b12_player_settings WHERE player_uuid = ?";
+            try (Connection conn = getConnection(); PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setString(1, playerUuid.toString());
+                try (ResultSet rs = ps.executeQuery()) {
+                    if (rs.next()) {
+                        return rs.getBoolean("invites_disabled");
+                    }
+                }
+            } catch (SQLException e) {
+                plugin.getLogger().log(Level.SEVERE, "Erro ao buscar status de convite para " + playerUuid, e);
+            }
+            return false; // Por padrão, convites são ativados
+        }, plugin.getThreadPool());
     }
 
     public boolean deleteClan(int clanId) {

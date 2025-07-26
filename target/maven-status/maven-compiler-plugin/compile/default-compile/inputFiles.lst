@@ -8,6 +8,7 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/ConviteCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/AjudaCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/chat/DiscordManager.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/RelationsCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/FriendlyFireCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/RivalCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/chat/ClanChatManager.java
@@ -27,6 +28,7 @@
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/ConfigCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/listeners/ChatListener.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/database/ClanExistenceStatus.java
+/home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/ToggleInviteCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/commands/subcommands/KDRCommand.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/models/Clan.java
 /home/wilian/Documentos/B12Clan/src/main/java/com/br/b12clans/listeners/KDRListener.java
